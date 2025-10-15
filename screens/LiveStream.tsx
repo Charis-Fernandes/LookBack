@@ -9,7 +9,7 @@ import {
 import { WebView } from 'react-native-webview';
 
 export default function LiveStream() {
-  const [streamUrl, setStreamUrl] = useState('http://10.237.147.207');
+  const [streamUrl, setStreamUrl] = useState('http://10.237.147.207:81/stream');
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
@@ -62,7 +62,14 @@ export default function LiveStream() {
             min-height: 100vh;
             overflow: hidden;
           }
-          img {
+          #stream-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+          #videoStream {
             width: 100%;
             height: 100%;
             object-fit: contain;
@@ -73,20 +80,68 @@ export default function LiveStream() {
             text-align: center;
             padding: 20px;
           }
+          #mjpeg-stream {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+          }
         </style>
       </head>
       <body>
-        <img 
-          id="stream" 
-          src="${streamUrl}" 
-          alt="Live Stream"
-          onerror="this.style.display='none'; document.getElementById('error').style.display='block';"
-          onload="this.style.display='block'; document.getElementById('error').style.display='none';"
-        />
-        <div id="error" class="error-message" style="display: none;">
-          <h2>⚠️ Stream Unavailable</h2>
-          <p>Unable to connect to the video stream.</p>
+        <div id="stream-container">
+          <!-- ESP32-CAM stream -->
+          <img id="mjpeg-stream" 
+               src="${streamUrl}" 
+               onerror="this.style.display='none'; document.getElementById('error').style.display='block';"
+               style="display: block;"
+          />
+          <div id="error" class="error-message" style="display: none;">
+            <h2>⚠️ Stream Unavailable</h2>
+            <p>Unable to connect to the video stream.</p>
+          </div>
         </div>
+        <script>
+          // Try different streaming methods
+          const video = document.getElementById('videoStream');
+          const mjpegStream = document.getElementById('mjpeg-stream');
+          const errorDiv = document.getElementById('error');
+          
+          function tryFallbackStream() {
+            // Try MJPEG stream
+            mjpegStream.src = "${streamUrl}/mjpeg";
+            mjpegStream.style.display = 'block';
+            
+            mjpegStream.onerror = function() {
+              // If MJPEG fails, try snapshot mode
+              mjpegStream.src = "${streamUrl}/snapshot";
+              mjpegStream.style.display = 'block';
+              
+              // Refresh snapshot every second
+              setInterval(() => {
+                if (mjpegStream.style.display !== 'none') {
+                  mjpegStream.src = "${streamUrl}/snapshot?t=" + new Date().getTime();
+                }
+              }, 1000);
+              
+              mjpegStream.onerror = function() {
+                mjpegStream.style.display = 'none';
+                errorDiv.style.display = 'block';
+              }
+            }
+          }
+          
+          video.addEventListener('loadeddata', function() {
+            video.style.display = 'block';
+          });
+          
+          video.addEventListener('error', function() {
+            video.style.display = 'none';
+            mjpegStream.style.display = 'block';
+          });
+          
+          // Start with video stream
+          video.style.display = 'block';
+        </script>
       </body>
     </html>
   `;
@@ -96,15 +151,30 @@ export default function LiveStream() {
       {/* Status Bar */}
       <View style={styles.statusBar}>
         <View style={styles.statusItem}>
-          <View style={[styles.statusDot, isConnected ? styles.connected : styles.disconnected]} />
-          <Text style={styles.statusText}>
-            {isConnected ? 'Connected' : 'Disconnected'}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={[styles.statusDot, isConnected ? styles.connected : styles.disconnected]} />
+            <Text style={styles.statusText}>
+              {isConnected ? 'Connected' : 'Disconnected'}
+            </Text>
+          </View>
         </View>
-        <Text style={styles.urlText}>{streamUrl}</Text>
-        <TouchableOpacity style={styles.reconnectButton} onPress={handleReload}>
-          <Text style={styles.reconnectText}>🔄 Reconnect</Text>
-        </TouchableOpacity>
+        <Text numberOfLines={1} ellipsizeMode="middle" style={styles.urlText}>{streamUrl}</Text>
+        <View style={styles.buttonGroup}>
+          <TouchableOpacity style={[styles.button, styles.stopButton]} onPress={() => {
+            setIsConnected(false);
+            if (webViewRef.current) {
+              webViewRef.current.injectJavaScript(`
+                document.getElementById('mjpeg-stream').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+              `);
+            }
+          }}>
+            <Text style={styles.buttonText}>⏹️ Stop</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.button, styles.reconnectButton]} onPress={handleReload}>
+            <Text style={styles.buttonText}>🔄 Reconnect</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Stream Container */}
@@ -163,9 +233,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   statusBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'column',
     backgroundColor: '#ffffff',
     padding: 16,
     borderRadius: 12,
@@ -175,15 +243,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+    gap: 12,
   },
   statusItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
   },
   statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     marginRight: 8,
   },
   connected: {
@@ -198,21 +269,38 @@ const styles = StyleSheet.create({
     color: '#1e293b',
   },
   urlText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#64748b',
-    flex: 1,
-    marginHorizontal: 16,
+    width: '100%',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    width: '100%',
+  },
+  button: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   reconnectButton: {
     backgroundColor: '#3b82f6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
   },
-  reconnectText: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '600',
+  stopButton: {
+    backgroundColor: '#ef4444',
   },
   streamContainer: {
     flex: 1,
