@@ -7,13 +7,19 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build": "npm run build:web",
+    "build:web": "npx expo export:web || npx expo export:web",
+    "build:android": "echo \"Native Android builds require EAS or local Android toolchain. See README for steps.\" && exit 1",
+    "build:ios": "echo \"Native iOS builds require EAS or a macOS environment with Xcode. See README for steps.\" && exit 1"
   },
   "dependencies": {
     "expo": "~54.0.13",
     "expo-status-bar": "~3.0.8",
     "react": "19.1.0",
+    "react-dom": "19.1.0",
     "react-native": "0.81.4",
+    "react-native-web": "^0.21.0",
     "react-native-webview": "^13.16.0"
   },
   "devDependencies": {
