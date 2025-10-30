@@ -42,6 +42,26 @@ export default function Settings() {
         </View>
       </View>
 
+      {/* Blynk IoT Integration Status */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>🌐 Blynk IoT Integration</Text>
+        <View style={styles.settingsCard}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Status</Text>
+            <View style={styles.statusRow}>
+              <View style={styles.statusDotGreen} />
+              <Text style={styles.statusText}>Connected to Blynk Cloud</Text>
+            </View>
+            <Text style={styles.settingDescription}>
+              💡 Template: lookback (TMPL31Se8tinV)
+            </Text>
+            <Text style={styles.settingDescription}>
+              🔗 Remote monitoring and control enabled
+            </Text>
+          </View>
+        </View>
+      </View>
+
       {/* Notifications */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>🔔 Notifications</Text>
@@ -332,5 +352,23 @@ const styles = StyleSheet.create({
     color: '#d97706',
     fontSize: 14,
     fontWeight: '600',
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  statusDotGreen: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#10b981',
+    marginRight: 8,
+  },
+  statusText: {
+    fontSize: 14,
+    color: '#1e293b',
+    fontWeight: '500',
   },
 });

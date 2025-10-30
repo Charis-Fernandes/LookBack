@@ -5,15 +5,22 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  TextInput,
+  Modal,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
+import BlynkService from '../services/BlynkService';
+import { BLYNK_CONFIG } from '../config/blynk.config';
 
 export default function LiveStream() {
-  const [streamUrl, setStreamUrl] = useState('http://10.237.147.207:81/stream');
+  const [streamUrl, setStreamUrl] = useState('http://10.56.141.207:81/stream');
+  const [tempUrl, setTempUrl] = useState('http://10.56.141.207:81/stream');
+  const [showUrlModal, setShowUrlModal] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
   const webViewRef = useRef<WebView>(null);
+  const blynkService = useRef(new BlynkService(BLYNK_CONFIG.AUTH_TOKEN)).current;
 
   useEffect(() => {
     if (!isConnected && retryCount > 0 && retryCount < 5) {
@@ -24,12 +31,53 @@ export default function LiveStream() {
     }
   }, [isConnected, retryCount]);
 
+  // Poll Blynk for remote control commands
+  useEffect(() => {
+    const pollBlynk = async () => {
+      try {
+        // Check for reconnect trigger from Blynk
+        const shouldReconnect = await blynkService.getReconnectTrigger();
+        if (shouldReconnect) {
+          handleReload();
+        }
+
+        // Check camera control state
+        const cameraOn = await blynkService.getCameraControl();
+        if (!cameraOn && isConnected) {
+          // Stop stream if camera is turned off via Blynk
+          setIsConnected(false);
+        }
+      } catch (error) {
+        console.error('Blynk poll error:', error);
+      }
+    };
+
+    const interval = setInterval(pollBlynk, 3000); // Poll every 3 seconds
+    return () => clearInterval(interval);
+  }, [isConnected]);
+
+  // Update Blynk when connection status changes
+  useEffect(() => {
+    blynkService.updateStreamStatus(isConnected);
+    blynkService.updateCameraControl(isConnected);
+    
+    if (isConnected) {
+      blynkService.updateQuality('Good');
+      blynkService.logEvent('STREAM_CONNECT', 'Live stream connected successfully');
+    } else {
+      blynkService.updateQuality('Offline');
+    }
+  }, [isConnected]);
+
   const handleReload = () => {
     setIsLoading(true);
     setRetryCount(prev => prev + 1);
     if (webViewRef.current) {
       webViewRef.current.reload();
     }
+    
+    // Notify Blynk
+    blynkService.logEvent('STREAM_RECONNECT', `Reconnecting to stream (attempt ${retryCount + 1})`);
   };
 
   const handleLoadStart = () => {
@@ -40,11 +88,29 @@ export default function LiveStream() {
     setIsLoading(false);
     setIsConnected(true);
     setRetryCount(0);
+    
+    // Notify Blynk
+    blynkService.sendNotification('📹 LookBack stream is now live!');
   };
 
   const handleError = () => {
     setIsLoading(false);
     setIsConnected(false);
+    
+    // Notify Blynk
+    blynkService.updateDeviceStatus('Error');
+    blynkService.logEvent('STREAM_ERROR', 'Failed to connect to stream');
+  };
+
+  const handleUrlChange = () => {
+    setStreamUrl(tempUrl);
+    setShowUrlModal(false);
+    setRetryCount(0);
+    handleReload();
+    
+    // Update Blynk with new URL
+    blynkService.updateStreamUrl(tempUrl);
+    blynkService.logEvent('URL_CHANGE', `Stream URL updated to ${tempUrl}`);
   };
 
   const htmlContent = `
@@ -84,6 +150,7 @@ export default function LiveStream() {
             width: 100%;
             height: 100%;
             object-fit: contain;
+            transform: rotate(-90deg);
           }
         </style>
       </head>
@@ -148,6 +215,53 @@ export default function LiveStream() {
 
   return (
     <View style={styles.container}>
+      {/* URL Configuration Modal */}
+      <Modal
+        visible={showUrlModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowUrlModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Configure Stream URL</Text>
+            <Text style={styles.modalSubtitle}>
+              Enter the IP address of your ESP32-CAM or streaming device
+            </Text>
+            <TextInput
+              style={styles.urlInput}
+              value={tempUrl}
+              onChangeText={setTempUrl}
+              placeholder="http://10.56.141.207:81/stream"
+              placeholderTextColor="#94a3b8"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+            />
+            <View style={styles.modalHint}>
+              <Text style={styles.hintText}>💡 Make sure your device is on the same network</Text>
+            </View>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]} 
+                onPress={() => {
+                  setTempUrl(streamUrl);
+                  setShowUrlModal(false);
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.saveButton]} 
+                onPress={handleUrlChange}
+              >
+                <Text style={styles.saveButtonText}>Connect</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Status Bar */}
       <View style={styles.statusBar}>
         <View style={styles.statusItem}>
@@ -158,7 +272,11 @@ export default function LiveStream() {
             </Text>
           </View>
         </View>
-        <Text numberOfLines={1} ellipsizeMode="middle" style={styles.urlText}>{streamUrl}</Text>
+        <TouchableOpacity onPress={() => setShowUrlModal(true)}>
+          <Text numberOfLines={1} ellipsizeMode="middle" style={styles.urlTextEditable}>
+            {streamUrl} ✏️
+          </Text>
+        </TouchableOpacity>
         <View style={styles.buttonGroup}>
           <TouchableOpacity style={[styles.button, styles.stopButton]} onPress={() => {
             setIsConnected(false);
@@ -277,6 +395,97 @@ const styles = StyleSheet.create({
     backgroundColor: '#f1f5f9',
     borderRadius: 6,
     overflow: 'hidden',
+  },
+  urlTextEditable: {
+    fontSize: 13,
+    color: '#3b82f6',
+    width: '100%',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 6,
+    overflow: 'hidden',
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#64748b',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  urlInput: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 10,
+    padding: 14,
+    fontSize: 14,
+    color: '#1e293b',
+    marginBottom: 12,
+  },
+  modalHint: {
+    backgroundColor: '#dbeafe',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  hintText: {
+    fontSize: 13,
+    color: '#1e40af',
+    lineHeight: 18,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#f1f5f9',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  cancelButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  saveButton: {
+    backgroundColor: '#3b82f6',
+  },
+  saveButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#ffffff',
   },
   buttonGroup: {
     flexDirection: 'row',
