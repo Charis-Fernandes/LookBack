@@ -1,0 +1,25 @@
+{
+  "image_path": "samples\\sample_fir_img.png",
+  "processing_status": "success",
+  "ocr": {
+    "raw_text": "FST BPORMATION REPORT\n(Unter Bes. 104 Cr PC.)\n\nBost Mp 920 Sorat Mo 15\n\n1 Onarest | Year. FR ३ Ose\n\n(ew Ded क:- लिला) टी विट 3१ किट: आ) १७.११ 382?\n\n(1) म. हि, Gestene 120-8 304 300\n(= - Gunpested Offence\nComniral emagireny entasten ot.\nCay fem Cate 20 04 2081 t 30 06 2021 Tene 11 00 re ७० 1100 hos\n[क ० कस. COUME 8, EW OGG\nGuay te. 68 टिकेकर 06.11.2822 Tine: 1388 Me.\nType of eviarusten (रि विलिन / Ort Vatien (The FR 8 दे.\nfem Mare?s erguage\nertaen FIR Mo 0140/2072\nPE Trane Mager)\nase of cunsvense Tree\n(a) Ovecten 6 Oneness tun\nGoat hte\nabtrens Const (ate, Thane\n@) sh कु. ६ Oak of Ben Petes डिक. Hen\nlean of PS न Ouarct\n\nComptainert / Wiener.\n\ntome Sr Voss Gabep कीने\nFeterettabats Mame Oo Caney Oebrede\nOsaetyens of Crt है",
+    "ocr_confidence": 0.65
+  },
+  "classification": {
+    "doc_type": "ID_CARD",
+    "confidence": 0.27973324060440063,
+    "method": "DistilBERT",
+    "valid_types": [
+      "FIR",
+      "ID_CARD",
+      "CHARGE_SHEET",
+      "POLICE_REPORT"
+    ]
+  },
+  "summary": {
+    "detected_document_type": "ID_CARD",
+    "ocr_confidence": 0.65,
+    "classification_confidence": 0.27973324060440063,
+    "text_preview": "FST BPORMATION REPORT\n(Unter Bes. 104 Cr PC.)\n\nBost Mp 920 Sorat Mo 15\n\n1 Onarest | Year. FR ३ Ose\n\n(ew Ded क:- लिला) टी विट 3१ किट: आ) १७.११ 382?\n\n(1) म. हि, Gestene 120-8 304 300\n(= - Gunpested Offe..."
+  }
+}
