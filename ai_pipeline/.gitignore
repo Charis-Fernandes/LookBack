@@ -40,6 +40,12 @@ outputs/**/*.json
 *.log
 test_output/
 .pytest_cache/
+ai_pipeline/models/
+ai_pipeline/dataset/
+*.safetensors
+*.bin
+*.pt
+*.csv
 
 # OS
 Thumbs.db
