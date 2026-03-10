@@ -1,13 +1,4 @@
-"""
-Complete LookBack Document Processing Pipeline
-Chains: Image → OCR → Classification → JSON Output
 
-Usage:
-    python pipeline.py <image_path> [--output output.json] [--aggressive]
-
-Example:
-    python pipeline.py samples/sample_fir_img.png --output results.json --aggressive
-"""
 
 import json
 import argparse
@@ -21,35 +12,17 @@ from classify import DocumentClassifier
 
 
 class LookBackPipeline:
-    """
-    Complete document processing pipeline for law enforcement documents.
     
-    Processes:
-    1. OCR: Extract text from image using Tesseract
-    2. Classification: Classify document type using DistilBERT
-    """
     
     def __init__(self, image_path: str, aggressive: bool = True, output_path: Optional[str] = None):
-        """
-        Initialize the pipeline.
         
-        Args:
-            image_path: Path to input document image
-            aggressive: Use aggressive OCR preprocessing for low-quality images
-            output_path: Optional path to save final JSON output
-        """
         self.image_path = image_path
         self.aggressive = aggressive
         self.output_path = output_path
         self.final_output = {}
         
     def run(self) -> Dict:
-        """
-        Execute the complete pipeline: OCR → Classification
         
-        Returns:
-            Dictionary with processing results
-        """
         print("\n" + "="*60)
         print("LookBack Document Processing Pipeline")
         print("="*60)
@@ -95,12 +68,7 @@ class LookBackPipeline:
         return self.final_output
     
     def _run_ocr(self) -> Optional[Dict]:
-        """
-        Run OCR on the image.
         
-        Returns:
-            OCR result JSON or None if failed
-        """
         try:
             ocr = OCRModule(
                 self.image_path,
@@ -113,15 +81,7 @@ class LookBackPipeline:
             return None
     
     def _run_classification(self, ocr_result: Dict) -> Optional[Dict]:
-        """
-        Classify the document based on OCR text.
         
-        Args:
-            ocr_result: Output from OCR module
-            
-        Returns:
-            Classification result JSON or None if failed
-        """
         try:
             # Create temporary JSON file with OCR output for classifier
             temp_ocr_json = "temp_ocr_output.json"
@@ -147,7 +107,7 @@ class LookBackPipeline:
             return None
     
     def _save_output(self):
-        """Save final output to JSON file."""
+        
         try:
             with open(self.output_path, 'w', encoding='utf-8') as f:
                 json.dump(self.final_output, f, indent=2, ensure_ascii=False)
@@ -156,7 +116,7 @@ class LookBackPipeline:
             print(f"ERROR: Could not save output: {str(e)}")
     
     def print_summary(self):
-        """Print a summary of the processing results."""
+        
         if not self.final_output:
             print("No results to display")
             return
@@ -173,7 +133,7 @@ class LookBackPipeline:
 
 
 def main():
-    """Main entry point for the pipeline"""
+    
     parser = argparse.ArgumentParser(
         description="LookBack Document Processing Pipeline - OCR + Classification"
     )
