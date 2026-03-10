@@ -1,0 +1,8 @@
+// UploadThing Configuration
+export const UPLOADTHING_CONFIG = {
+  TOKEN: 'eyJhcGlLZXkiOiJza19saXZlXzYyMTA0Yzg4MjViZThkNjhlYjZjODk5NDA2NTU0N2QyNGU5NmQ4MzQ3NzQ0MTJiOGY2OGVmOTNlMDg2MjA1ZjQiLCJhcHBJZCI6ImhjNThnc2V4NTciLCJyZWdpb25zIjpbInNlYTEiXX0=',
+  APP_ID: 'hc58gsex57',
+  REGION: 'sea1',
+};
+
+export default UPLOADTHING_CONFIG;

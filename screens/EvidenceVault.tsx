@@ -1,79 +1,176 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TextInput,
-  ScrollView,
+  FlatList,
+  Image,
   TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+  Dimensions,
+  Alert,
+  Modal,
 } from 'react-native';
+import LocalFileStorageService, { StoredSnapshot } from '../services/LocalFileStorageService';
 
-const mockEvidence = [
-  { id: 1, type: 'video', title: 'Incident_001.mp4', date: '2025-10-14', size: '45 MB' },
-  { id: 2, type: 'image', title: 'Evidence_A.jpg', date: '2025-10-13', size: '2.3 MB' },
-  { id: 3, type: 'video', title: 'Scene_Recording.mp4', date: '2025-10-12', size: '128 MB' },
-  { id: 4, type: 'image', title: 'Document_Scan.png', date: '2025-10-12', size: '1.8 MB' },
-  { id: 5, type: 'audio', title: 'Interview_001.mp3', date: '2025-10-11', size: '15 MB' },
-  { id: 6, type: 'video', title: 'Surveillance_B.mp4', date: '2025-10-10', size: '89 MB' },
-  { id: 7, type: 'image', title: 'Photo_Evidence.jpg', date: '2025-10-09', size: '3.1 MB' },
-  { id: 8, type: 'document', title: 'Report_Final.pdf', date: '2025-10-08', size: '890 KB' },
-];
+const { width, height } = Dimensions.get('window');
+const CARD_WIDTH = (width - 48) / 2; // 2 columns with padding
 
 export default function EvidenceVault() {
+  const [snapshots, setSnapshots] = useState<StoredSnapshot[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<StoredSnapshot | null>(null);
+
+  useEffect(() => {
+    loadSnapshots();
+  }, []);
+
+  const loadSnapshots = async () => {
+    try {
+      setLoading(true);
+      const data = await LocalFileStorageService.listSnapshots();
+      setSnapshots(data);
+      console.log(`📁 Loaded ${data.length} snapshots`);
+    } catch (error) {
+      console.error('Load snapshots error:', error);
+      Alert.alert('Error', 'Failed to load snapshots');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadSnapshots();
+    setRefreshing(false);
+  };
+
+  const handleDelete = async (snapshot: StoredSnapshot) => {
+    Alert.alert(
+      'Delete Snapshot',
+      'Are you sure you want to delete this snapshot?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await LocalFileStorageService.deleteSnapshot(snapshot.id);
+              await loadSnapshots();
+              Alert.alert('Success', 'Snapshot deleted');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete snapshot');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+        <Text style={styles.loadingText}>Loading evidence...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Text style={styles.searchIcon}>🔍</Text>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search evidence by name, date, or type..."
-          placeholderTextColor="#94a3b8"
-        />
-        <TouchableOpacity style={styles.filterButton}>
-          <Text style={styles.filterText}>🎛️ Filter</Text>
-        </TouchableOpacity>
+      <View style={styles.header}>
+        <Text style={styles.title}>📁 Evidence Vault</Text>
+        <Text style={styles.subtitle}>{snapshots.length} snapshots stored</Text>
       </View>
 
-      {/* Stats */}
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>245</Text>
-          <Text style={styles.statLabel}>Total Items</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>8.4 GB</Text>
-          <Text style={styles.statLabel}>Storage Used</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>15</Text>
-          <Text style={styles.statLabel}>Recent</Text>
-        </View>
-      </View>
+      <FlatList
+        data={snapshots}
+        numColumns={2}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.imageCard}
+            onPress={() => setSelectedSnapshot(item)}
+            onLongPress={() => handleDelete(item)}
+          >
+            <Image source={{ uri: item.uri }} style={styles.image} />
+            <View style={styles.cardInfo}>
+              <Text style={styles.cardDate}>{formatDate(item.timestamp)}</Text>
+              <Text style={styles.cardQuality}>{item.quality}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+        contentContainerStyle={styles.grid}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>📸</Text>
+            <Text style={styles.emptyText}>No snapshots yet</Text>
+            <Text style={styles.emptySubtext}>
+              Capture from Live Stream to see them here
+            </Text>
+          </View>
+        }
+      />
 
-      {/* Evidence Grid */}
-      <ScrollView style={styles.gridContainer} showsVerticalScrollIndicator={false}>
-        <View style={styles.grid}>
-          {mockEvidence.map((item) => (
-            <TouchableOpacity key={item.id} style={styles.evidenceCard}>
-              <View style={styles.mediaPlaceholder}>
-                <Text style={styles.mediaIcon}>
-                  {item.type === 'video' ? '🎥' : item.type === 'image' ? '🖼️' : item.type === 'audio' ? '🎵' : '📄'}
-                </Text>
-              </View>
-              <View style={styles.cardContent}>
-                <Text style={styles.cardTitle} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                <View style={styles.cardMeta}>
-                  <Text style={styles.cardDate}>{item.date}</Text>
-                  <Text style={styles.cardSize}>{item.size}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+      {/* Full-screen image modal */}
+      <Modal
+        visible={selectedSnapshot !== null}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedSnapshot(null)}
+      >
+        <View style={styles.modalContainer}>
+          <TouchableOpacity
+            style={styles.modalBackground}
+            activeOpacity={1}
+            onPress={() => setSelectedSnapshot(null)}
+          >
+            <View style={styles.modalContent}>
+              {selectedSnapshot && (
+                <>
+                  <Image
+                    source={{ uri: selectedSnapshot.uri }}
+                    style={styles.fullscreenImage}
+                    resizeMode="contain"
+                  />
+                  <View style={styles.modalInfo}>
+                    <Text style={styles.modalDate}>
+                      {formatDate(selectedSnapshot.timestamp)}
+                    </Text>
+                    <Text style={styles.modalQuality}>{selectedSnapshot.quality}</Text>
+                    <Text style={styles.modalDevice}>{selectedSnapshot.deviceId}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => {
+                      setSelectedSnapshot(null);
+                      handleDelete(selectedSnapshot);
+                    }}
+                  >
+                    <Text style={styles.deleteButtonText}>🗑️ Delete</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+      </Modal>
     </View>
   );
 }
@@ -82,7 +179,98 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
-    padding: 24,
+    padding: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  header: {
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: '#64748b',
+  },
+  grid: {
+    paddingBottom: 20,
+  },
+  imageCard: {
+    width: CARD_WIDTH,
+    margin: 6,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  image: {
+    width: '100%',
+    height: 180,
+    resizeMode: 'cover',
+    backgroundColor: '#e2e8f0',
+    transform: [{ rotate: '-90deg' }],
+  },
+  cardInfo: {
+    padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cardDate: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  cardQuality: {
+    fontSize: 11,
+    color: '#10b981',
+    fontWeight: '700',
+    backgroundColor: '#d1fae5',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 80,
+    paddingHorizontal: 40,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtext: {
+    fontSize: 15,
+    color: '#94a3b8',
+    textAlign: 'center',
+    lineHeight: 22,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -148,23 +336,6 @@ const styles = StyleSheet.create({
   gridContainer: {
     flex: 1,
   },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-  },
-  evidenceCard: {
-    width: '48%',
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    marginBottom: 16,
-  },
   mediaPlaceholder: {
     backgroundColor: '#e2e8f0',
     height: 140,
@@ -187,13 +358,78 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  cardDate: {
-    fontSize: 11,
-    color: '#64748b',
-  },
   cardSize: {
     fontSize: 11,
     color: '#94a3b8',
     fontWeight: '600',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+  },
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullscreenImage: {
+    width: height * 0.8, // Swap width/height for rotated image
+    height: width,
+    transform: [{ rotate: '-90deg' }],
+  },
+  modalInfo: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: 16,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modalDate: {
+    fontSize: 14,
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  modalQuality: {
+    fontSize: 12,
+    color: '#10b981',
+    fontWeight: '700',
+    backgroundColor: 'rgba(209, 250, 229, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  modalDevice: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+  deleteButton: {
+    position: 'absolute',
+    bottom: 60,
+    backgroundColor: '#ef4444',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    color: '#ffffff',
+    fontWeight: '700',
   },
 });

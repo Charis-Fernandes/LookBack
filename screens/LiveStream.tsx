@@ -7,18 +7,23 @@ import {
   ActivityIndicator,
   TextInput,
   Modal,
+  Alert,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import BlynkService from '../services/BlynkService';
 import { BLYNK_CONFIG } from '../config/blynk.config';
+import LocalFileStorageService from '../services/LocalFileStorageService';
 
 export default function LiveStream() {
-  const [streamUrl, setStreamUrl] = useState('http://10.56.141.207:81/stream');
-  const [tempUrl, setTempUrl] = useState('http://10.56.141.207:81/stream');
+  const [streamUrl, setStreamUrl] = useState('http://10.145.212.207:81/stream');
+  const [tempUrl, setTempUrl] = useState('http://10.145.212.207:81/stream');
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
+  const [isCaptureLoading, setIsCaptureLoading] = useState(false);
+  const [streamQuality, setStreamQuality] = useState<'SD' | 'HD' | 'FHD'>('HD');
+  const [showQualityModal, setShowQualityModal] = useState(false);
   const webViewRef = useRef<WebView>(null);
   const blynkService = useRef(new BlynkService(BLYNK_CONFIG.AUTH_TOKEN)).current;
 
@@ -111,6 +116,77 @@ export default function LiveStream() {
     // Update Blynk with new URL
     blynkService.updateStreamUrl(tempUrl);
     blynkService.logEvent('URL_CHANGE', `Stream URL updated to ${tempUrl}`);
+  };
+
+  const handleCaptureSnapshot = async () => {
+    if (!isConnected) {
+      Alert.alert('Error', 'Stream is not connected. Please connect first.');
+      return;
+    }
+
+    try {
+      setIsCaptureLoading(true);
+
+      // Capture snapshot from ESP32-CAM - use base URL with /capture
+      const baseUrl = streamUrl.replace(':81/stream', '');
+      const captureUrl = `${baseUrl}/capture`;
+      console.log('📸 Capturing from:', captureUrl);
+
+      // Fetch the image
+      const response = await fetch(captureUrl);
+      if (!response.ok) {
+        throw new Error('Failed to capture image from stream');
+      }
+
+      const blob = await response.blob();
+      
+      // Convert blob to data URL for local storage
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+      });
+
+      // Save to local storage
+      console.log('💾 Saving to local storage...');
+      await LocalFileStorageService.saveSnapshot(dataUrl, {
+        deviceId: 'esp32-cam',
+        quality: streamQuality,
+        streamUrl: streamUrl,
+      });
+
+      // Log to Blynk
+      blynkService.logEvent('SNAPSHOT_CAPTURED', 'Snapshot saved locally');
+      blynkService.sendNotification('📸 Snapshot captured and saved!');
+
+      Alert.alert(
+        '✅ Success',
+        'Snapshot captured and saved to local storage!',
+        [{ text: 'OK' }]
+      );
+
+      console.log('✅ Snapshot saved to local storage');
+    } catch (error) {
+      console.error('❌ Capture error:', error);
+      Alert.alert(
+        '❌ Error',
+        'Failed to capture snapshot. Please try again.',
+        [{ text: 'OK' }]
+      );
+      
+      blynkService.logEvent('SNAPSHOT_ERROR', `Failed to capture: ${error}`);
+    } finally {
+      setIsCaptureLoading(false);
+    }
+  };
+
+  const handleQualityChange = (quality: 'SD' | 'HD' | 'FHD') => {
+    setStreamQuality(quality);
+    setShowQualityModal(false);
+    blynkService.updateQuality(quality);
+    blynkService.logEvent('QUALITY_CHANGE', `Quality changed to ${quality}`);
   };
 
   const htmlContent = `
@@ -278,16 +354,15 @@ export default function LiveStream() {
           </Text>
         </TouchableOpacity>
         <View style={styles.buttonGroup}>
-          <TouchableOpacity style={[styles.button, styles.stopButton]} onPress={() => {
-            setIsConnected(false);
-            if (webViewRef.current) {
-              webViewRef.current.injectJavaScript(`
-                document.getElementById('mjpeg-stream').style.display = 'none';
-                document.getElementById('error').style.display = 'block';
-              `);
-            }
-          }}>
-            <Text style={styles.buttonText}>⏹️ Stop</Text>
+      
+          <TouchableOpacity 
+            style={[styles.button, styles.captureButton]} 
+            onPress={handleCaptureSnapshot}
+            disabled={!isConnected || isCaptureLoading}
+          >
+            <Text style={styles.buttonText}>
+              {isCaptureLoading ? '⏳' : '📸'} Capture
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.button, styles.reconnectButton]} onPress={handleReload}>
             <Text style={styles.buttonText}>🔄 Reconnect</Text>
@@ -510,6 +585,9 @@ const styles = StyleSheet.create({
   },
   stopButton: {
     backgroundColor: '#ef4444',
+  },
+  captureButton: {
+    backgroundColor: '#10b981',
   },
   streamContainer: {
     flex: 1,
