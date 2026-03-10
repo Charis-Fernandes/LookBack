@@ -21,8 +21,11 @@ except (ImportError, Exception) as e:
     TRANSLATOR_AVAILABLE = False
     # Silently disable translation if dependencies not available
 
-# Configure Tesseract path for Windows
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# Configure Tesseract path (auto-detect OS)
+import platform
+if platform.system() == "Windows":
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+# On Linux/Mac, tesseract is expected to be in PATH (installed via apt/brew)
 
 
 class OCRModule:

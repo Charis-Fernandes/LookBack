@@ -1,14 +1,14 @@
 {
-  "image_path": "samples\\sample_fir_img.png",
+  "image_path": "samples/sample_fir_img.png",
   "processing_status": "success",
   "ocr": {
-    "raw_text": "FST BPORMATION REPORT\n(Unter Bes. 104 Cr PC.)\n\nBost Mp 920 Sorat Mo 15\n\n1 Onarest | Year. FR ३ Ose\n\n(ew Ded क:- लिला) टी विट 3१ किट: आ) १७.११ 382?\n\n(1) म. हि, Gestene 120-8 304 300\n(= - Gunpested Offence\nComniral emagireny entasten ot.\nCay fem Cate 20 04 2081 t 30 06 2021 Tene 11 00 re ७० 1100 hos\n[क ० कस. COUME 8, EW OGG\nGuay te. 68 टिकेकर 06.11.2822 Tine: 1388 Me.\nType of eviarusten (रि विलिन / Ort Vatien (The FR 8 दे.\nfem Mare?s erguage\nertaen FIR Mo 0140/2072\nPE Trane Mager)\nase of cunsvense Tree\n(a) Ovecten 6 Oneness tun\nGoat hte\nabtrens Const (ate, Thane\n@) sh कु. ६ Oak of Ben Petes डिक. Hen\nlean of PS न Ouarct\n\nComptainert / Wiener.\n\ntome Sr Voss Gabep कीने\nFeterettabats Mame Oo Caney Oebrede\nOsaetyens of Crt है",
-    "ocr_confidence": 0.65
+    "raw_text": "FRST BPORMATION REPORT\n(Unter Bes. 104 Cr PC.)\n\nBost tp 900 Sorat Mo 15\n\n1 Onsarest re Year. FR te Ose\n\n(ew Defd SCROED 8 3082 ROD CYSEEOCND «= 16.11 382?\n\n(1) At CO Geetens 120-8 304 300\n(= SGunpested Offence\nComniral emagieny entasten ot.\nCay fem Cate 20 04 2081 t 38 06 2021 Tene 1100 he te 1100 hos\négemaden spenteed ot OO CBI, SPECIAL CAUME 8, EW OGG\nGuay tte. 68 Ostx 06.11.2022 Tine: 1388 Me.\nType of evierusten (Veter / Ort Vatien (The FR « e-protuced\nfrum Mare?s lergunge\nertaen FIR Mo 0140/2072\nof PE Trane Mager)\nase of cunsvense Tree\n(a) « Ovectan 6 Oneness fun\nGoat hte\nAdtran Const (tate, Thane\n@) «sane, extn Hes Oud of Ben Petes Sasbor hen\nbean of PS : Ouaret\n\nComptainest | Woenware.\n\ntome Sr Vows Gebep Oatrede\nFeterettabats Mame Onn Caney Oenrede\nOsaetyens of B® 1en2",
+    "ocr_confidence": 0.66
   },
   "classification": {
-    "doc_type": "ID_CARD",
-    "confidence": 0.27973324060440063,
-    "method": "DistilBERT",
+    "doc_type": "FIR",
+    "confidence": 0.4,
+    "method": "Keywords",
     "valid_types": [
       "FIR",
       "ID_CARD",
@@ -16,10 +16,34 @@
       "POLICE_REPORT"
     ]
   },
+  "field_extraction": {
+    "status": "success",
+    "fields_extracted": 2,
+    "confidence": 0.25,
+    "extracted_data": {
+      "date": "2022-11-06",
+      "sections": [],
+      "police_station": "Ouaret"
+    }
+  },
+  "detection": {
+    "tags": [
+      "book"
+    ],
+    "confidence": 0.32
+  },
   "summary": {
-    "detected_document_type": "ID_CARD",
-    "ocr_confidence": 0.65,
-    "classification_confidence": 0.27973324060440063,
-    "text_preview": "FST BPORMATION REPORT\n(Unter Bes. 104 Cr PC.)\n\nBost Mp 920 Sorat Mo 15\n\n1 Onarest | Year. FR ३ Ose\n\n(ew Ded क:- लिला) टी विट 3१ किट: आ) १७.११ 382?\n\n(1) म. हि, Gestene 120-8 304 300\n(= - Gunpested Offe..."
+    "detected_document_type": "FIR",
+    "ocr_confidence": 0.66,
+    "classification_confidence": 0.4,
+    "extraction_confidence": 0.25,
+    "fields_extracted": 2,
+    "fir_no": "N/A",
+    "date": "2022-11-06",
+    "sections": [],
+    "detected_objects": [
+      "book"
+    ],
+    "text_preview": "FRST BPORMATION REPORT\n(Unter Bes. 104 Cr PC.)\n\nBost tp 900 Sorat Mo 15\n\n1 Onsarest re Year. FR te Ose\n\n(ew Defd SCROED 8 3082 ROD CYSEEOCND «= 16.11 382?\n\n(1) At CO Geetens 120-8 304 300\n(= SGunpeste..."
   }
 }
