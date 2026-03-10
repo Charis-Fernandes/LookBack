@@ -1,0 +1,11 @@
+{
+  "doc_type": "FIR",
+  "confidence": 0.6272083520889282,
+  "method": "DistilBERT",
+  "valid_types": [
+    "FIR",
+    "ID_CARD",
+    "CHARGE_SHEET",
+    "POLICE_REPORT"
+  ]
+}
