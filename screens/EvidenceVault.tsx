@@ -12,16 +12,17 @@ import {
   Alert,
   Modal,
 } from 'react-native';
+import FirebaseService, { EvidenceItem } from '../services/FirebaseService';
 import LocalFileStorageService, { StoredSnapshot } from '../services/LocalFileStorageService';
 
 const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2; // 2 columns with padding
 
 export default function EvidenceVault() {
-  const [snapshots, setSnapshots] = useState<StoredSnapshot[]>([]);
+  const [snapshots, setSnapshots] = useState<EvidenceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedSnapshot, setSelectedSnapshot] = useState<StoredSnapshot | null>(null);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<EvidenceItem | null>(null);
 
   useEffect(() => {
     loadSnapshots();
@@ -30,12 +31,41 @@ export default function EvidenceVault() {
   const loadSnapshots = async () => {
     try {
       setLoading(true);
-      const data = await LocalFileStorageService.listSnapshots();
+      // Try Firestore first, fall back to local storage
+      let data = await FirebaseService.listEvidence();
+      if (data.length === 0) {
+        // Fallback: load from local storage for backward compatibility
+        const localData = await LocalFileStorageService.listSnapshots();
+        data = localData.map(s => ({
+          id: s.id,
+          imageUrl: s.uri,
+          timestamp: s.timestamp,
+          deviceId: s.deviceId,
+          quality: s.quality,
+          streamUrl: s.streamUrl,
+          caseId: s.caseId,
+        }));
+      }
       setSnapshots(data);
-      console.log(`📁 Loaded ${data.length} snapshots`);
+      console.log(`📁 Loaded ${data.length} evidence items`);
     } catch (error) {
-      console.error('Load snapshots error:', error);
-      Alert.alert('Error', 'Failed to load snapshots');
+      console.error('Load evidence error:', error);
+      // Fallback to local storage on Firestore error
+      try {
+        const localData = await LocalFileStorageService.listSnapshots();
+        const mapped = localData.map(s => ({
+          id: s.id,
+          imageUrl: s.uri,
+          timestamp: s.timestamp,
+          deviceId: s.deviceId,
+          quality: s.quality,
+          streamUrl: s.streamUrl,
+          caseId: s.caseId,
+        }));
+        setSnapshots(mapped);
+      } catch (localError) {
+        Alert.alert('Error', 'Failed to load evidence');
+      }
     } finally {
       setLoading(false);
     }
@@ -47,10 +77,10 @@ export default function EvidenceVault() {
     setRefreshing(false);
   };
 
-  const handleDelete = async (snapshot: StoredSnapshot) => {
+  const handleDelete = async (snapshot: EvidenceItem) => {
     Alert.alert(
-      'Delete Snapshot',
-      'Are you sure you want to delete this snapshot?',
+      'Delete Evidence',
+      'Are you sure you want to delete this evidence?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -58,11 +88,15 @@ export default function EvidenceVault() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await LocalFileStorageService.deleteSnapshot(snapshot.id);
+              if (snapshot.id) {
+                await FirebaseService.deleteEvidence(snapshot.id);
+              }
+              // Also try removing from local storage
+              await LocalFileStorageService.deleteSnapshot(snapshot.id || '').catch(() => {});
               await loadSnapshots();
-              Alert.alert('Success', 'Snapshot deleted');
+              Alert.alert('Success', 'Evidence deleted');
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete snapshot');
+              Alert.alert('Error', 'Failed to delete evidence');
             }
           },
         },
@@ -99,14 +133,14 @@ export default function EvidenceVault() {
       <FlatList
         data={snapshots}
         numColumns={2}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id || String(item.timestamp)}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.imageCard}
             onPress={() => setSelectedSnapshot(item)}
             onLongPress={() => handleDelete(item)}
           >
-            <Image source={{ uri: item.uri }} style={styles.image} />
+            <Image source={{ uri: item.imageUrl }} style={styles.image} />
             <View style={styles.cardInfo}>
               <Text style={styles.cardDate}>{formatDate(item.timestamp)}</Text>
               <Text style={styles.cardQuality}>{item.quality}</Text>
@@ -145,7 +179,7 @@ export default function EvidenceVault() {
               {selectedSnapshot && (
                 <>
                   <Image
-                    source={{ uri: selectedSnapshot.uri }}
+                    source={{ uri: selectedSnapshot.imageUrl }}
                     style={styles.fullscreenImage}
                     resizeMode="contain"
                   />

@@ -13,6 +13,7 @@ import { WebView } from 'react-native-webview';
 import BlynkService from '../services/BlynkService';
 import { BLYNK_CONFIG } from '../config/blynk.config';
 import LocalFileStorageService from '../services/LocalFileStorageService';
+import FirebaseService from '../services/FirebaseService';
 
 export default function LiveStream() {
   const [streamUrl, setStreamUrl] = useState('http://10.145.212.207:81/stream');
@@ -156,6 +157,16 @@ export default function LiveStream() {
         quality: streamQuality,
         streamUrl: streamUrl,
       });
+
+      // Save metadata to Firestore
+      console.log('☁️ Saving metadata to Firestore...');
+      await FirebaseService.saveEvidence({
+        imageUrl: dataUrl,
+        timestamp: Date.now(),
+        deviceId: 'esp32-cam',
+        quality: streamQuality,
+        streamUrl: streamUrl,
+      }).catch(err => console.warn('Firestore save warning:', err));
 
       // Log to Blynk
       blynkService.logEvent('SNAPSHOT_CAPTURED', 'Snapshot saved locally');
