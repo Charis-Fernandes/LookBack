@@ -2,12 +2,12 @@
   "image_path": "samples/sample_fir_img.png",
   "processing_status": "success",
   "ocr": {
-    "raw_text": "FRST BPORMATION REPORT\n(Unter Bes. 104 Cr PC.)\n\nBost tp 900 Sorat Mo 15\n\n1 Onsarest re Year. FR te Ose\n\n(ew Defd SCROED 8 3082 ROD CYSEEOCND «= 16.11 382?\n\n(1) At CO Geetens 120-8 304 300\n(= SGunpested Offence\nComniral emagieny entasten ot.\nCay fem Cate 20 04 2081 t 38 06 2021 Tene 1100 he te 1100 hos\négemaden spenteed ot OO CBI, SPECIAL CAUME 8, EW OGG\nGuay tte. 68 Ostx 06.11.2022 Tine: 1388 Me.\nType of evierusten (Veter / Ort Vatien (The FR « e-protuced\nfrum Mare?s lergunge\nertaen FIR Mo 0140/2072\nof PE Trane Mager)\nase of cunsvense Tree\n(a) « Ovectan 6 Oneness fun\nGoat hte\nAdtran Const (tate, Thane\n@) «sane, extn Hes Oud of Ben Petes Sasbor hen\nbean of PS : Ouaret\n\nComptainest | Woenware.\n\ntome Sr Vows Gebep Oatrede\nFeterettabats Mame Onn Caney Oenrede\nOsaetyens of B® 1en2",
-    "ocr_confidence": 0.66
+    "raw_text": "FIRST INFORMATION REPORT (Under Sec.154 Cr.P.C.) Book No. 949 Serial No. 15 District PS: Year: FIR No.: Date: New Delhi SC4IIIND 2022 Act IPC Sections: 120-B, 384, 389. Suspected Offence- Criminal conspiracy, extortion etc. Day: from Date: 20.04.2021 to 20.04.2021Time: 11:00 hrs. to 11:00 hrs. Information received at PS: CBI, SPECIAL NEW DELHI Entry No.: 05 Date: 16.11.2022 Time: 1300 Hrs. Type of information (Written Oral): Written (The FIR is re-produced from Marathi language written FIR No. 0140/2022 of PS; Thane Nagar). Place of occurrence Thane Direction Distance from Beat No. Address Court Naka, Thane. Incase, outside the limit of this Police Station, then Name of PS District Complainant Informant. Name Shri Vikas Gabaji Dabhade Father's/Husband's Name Shri Gabaji Dabhade Date/year of Birth 1982 Nationality Indian",
+    "ocr_confidence": 0.88
   },
   "classification": {
     "doc_type": "FIR",
-    "confidence": 0.4,
+    "confidence": 0.95,
     "method": "Keywords",
     "valid_types": [
       "FIR",
@@ -18,12 +18,30 @@
   },
   "field_extraction": {
     "status": "success",
-    "fields_extracted": 2,
-    "confidence": 0.25,
+    "fields_extracted": 9,
+    "confidence": 0.75,
     "extracted_data": {
-      "date": "2022-11-06",
-      "sections": [],
-      "police_station": "Ouaret"
+      "fir_no": "0140/2022",
+      "date": "2021-04-20",
+      "all_dates": [
+        "2021-04-20",
+        "2022-11-16"
+      ],
+      "sections": [
+        "120"
+      ],
+      "sections_detailed": [
+        {
+          "section": "120",
+          "description": "Unknown Section"
+        }
+      ],
+      "police_station": "CBI",
+      "complainant": "Shri Vikas Gabaji Dabhade Father",
+      "acts_referenced": [
+        "Indian Penal Code (IPC)"
+      ],
+      "district": "ance from Beat No"
     }
   },
   "detection": {
@@ -34,16 +52,18 @@
   },
   "summary": {
     "detected_document_type": "FIR",
-    "ocr_confidence": 0.66,
-    "classification_confidence": 0.4,
-    "extraction_confidence": 0.25,
-    "fields_extracted": 2,
-    "fir_no": "N/A",
-    "date": "2022-11-06",
-    "sections": [],
+    "ocr_confidence": 0.88,
+    "classification_confidence": 0.95,
+    "extraction_confidence": 0.75,
+    "fields_extracted": 9,
+    "fir_no": "0140/2022",
+    "date": "2021-04-20",
+    "sections": [
+      "120"
+    ],
     "detected_objects": [
       "book"
     ],
-    "text_preview": "FRST BPORMATION REPORT\n(Unter Bes. 104 Cr PC.)\n\nBost tp 900 Sorat Mo 15\n\n1 Onsarest re Year. FR te Ose\n\n(ew Defd SCROED 8 3082 ROD CYSEEOCND «= 16.11 382?\n\n(1) At CO Geetens 120-8 304 300\n(= SGunpeste..."
+    "text_preview": "FIRST INFORMATION REPORT (Under Sec.154 Cr.P.C.) Book No. 949 Serial No. 15 District PS: Year: FIR No.: Date: New Delhi SC4IIIND 2022 Act IPC Sections: 120-B, 384, 389. Suspected Offence- Criminal con..."
   }
 }

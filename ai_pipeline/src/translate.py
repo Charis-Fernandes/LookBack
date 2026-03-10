@@ -1,8 +1,4 @@
-"""
-Advanced Translation Module using IndicTrans Model
-Detects and translates Indian languages (Hindi, Marathi, etc.) to English
-Part of LookBack Document Processing System
-"""
+
 
 import json
 import argparse
@@ -15,7 +11,6 @@ TRANSFORMERS_AVAILABLE = False
 TORCH_AVAILABLE = False
 
 def _check_dependencies():
-    """Check if required dependencies are available"""
     global TRANSFORMERS_AVAILABLE, TORCH_AVAILABLE
     try:
         import torch
@@ -33,28 +28,7 @@ def _check_dependencies():
 
 
 class IndicTransTranslator:
-    """
-    Advanced translator using IndicTrans2 model for Indian languages.
     
-    Supports:
-    - Hindi (hin_Deva)
-    - Marathi (mar_Deva)
-    - Gujarati (guj_Deva)
-    - Bengali (ben_Deva)
-    - Tamil (tam_Taml)
-    - Telugu (tel_Telu)
-    - Kannada (kan_Knda)
-    - Malayalam (mal_Mlym)
-    - Punjabi (pan_Guru)
-    - Urdu (urd_Arab)
-    - Hinglish (encoded as hindi)
-    
-    Attributes:
-        text (str): Input text to translate
-        source_language (str): Detected source language code
-        translated_text (str): Translated English text
-        confidence (float): Translation confidence (0.0-1.0)
-    """
     
     # Language code mapping for IndicTrans2
     INDIC_LANG_CODES = {
@@ -85,12 +59,7 @@ class IndicTransTranslator:
     }
     
     def __init__(self, text: str = ""):
-        """
-        Initialize IndicTrans Translator
         
-        Args:
-            text (str, optional): Text to translate
-        """
         self.text = text
         self.source_language = None
         self.translated_text = ""
@@ -102,11 +71,7 @@ class IndicTransTranslator:
         self._load_model()
     
     def _load_model(self):
-        """
-        Load the IndicTrans2 model from HuggingFace
         
-        Uses: ai4bharat/indic-trans-indic_to_en-1498M
-        """
         try:
             # Lazy import to avoid compatibility issues
             if not _check_dependencies():
@@ -130,21 +95,7 @@ class IndicTransTranslator:
             return False
     
     def detect_language_simple(self, text: str) -> str:
-        """
-        Simple language detection using character analysis
         
-        Analyzes Unicode script to determine language:
-        - Devanagari script → Hindi/Marathi/Sanskrit
-        - Tamil script → Tamil
-        - Telugu script → Telugu
-        - etc.
-        
-        Args:
-            text (str): Input text
-            
-        Returns:
-            str: Detected language code (e.g., 'hin_Deva')
-        """
         if not text:
             return 'eng_Latn'
         
@@ -194,12 +145,7 @@ class IndicTransTranslator:
         return 'eng_Latn'
     
     def set_text(self, text: str):
-        """
-        Set text to translate
         
-        Args:
-            text (str): Text to translate
-        """
         self.text = text
         self.source_language = None
         self.translated_text = ""
@@ -207,12 +153,7 @@ class IndicTransTranslator:
         self.error_message = None
     
     def translate(self) -> bool:
-        """
-        Detect language and translate to English
         
-        Returns:
-            bool: True if successful, False otherwise
-        """
         try:
             if not self.text or not self.text.strip():
                 self.error_message = "Input text is empty"
@@ -257,12 +198,7 @@ class IndicTransTranslator:
             return True  # Non-critical failure
     
     def get_output_json(self) -> Dict:
-        """
-        Generate JSON output with translation results
         
-        Returns:
-            dict: Output JSON with translation details
-        """
         return {
             "original_text": self.text[:200] + "..." if len(self.text) > 200 else self.text,
             "translated_text": self.translated_text,
@@ -275,15 +211,7 @@ class IndicTransTranslator:
 
 
 def translate_if_needed(text: str) -> Tuple[str, str, float]:
-    """
-    Simple function interface for translation
     
-    Args:
-        text (str): Text to translate (any language)
-        
-    Returns:
-        Tuple[str, str, float]: (translated_text, source_language, confidence)
-    """
     translator = IndicTransTranslator(text)
     
     if translator.translate():
@@ -293,10 +221,7 @@ def translate_if_needed(text: str) -> Tuple[str, str, float]:
 
 
 def main():
-    """
-    Command-line interface for Advanced Translator
-    Usage: python translate.py <ocr_json_path> [--output output.json]
-    """
+    
     parser = argparse.ArgumentParser(
         description="LookBack Advanced Translator - IndicTrans2 for Indian Languages"
     )

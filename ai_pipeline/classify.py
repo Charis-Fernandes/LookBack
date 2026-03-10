@@ -1,11 +1,4 @@
-"""
-Document Classification Module using Fine-tuned DistilBERT
 
-This module loads a fine-tuned DistilBERT model and classifies documents
-into one of four types: FIR, ID_CARD, CHARGE_SHEET, POLICE_REPORT
-
-The model should be trained in Google Colab and saved to models/distilbert_classifier/
-"""
 
 import json
 import logging
@@ -27,15 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class DocumentClassifier:
-    """
-    Classifies documents using fine-tuned DistilBERT model.
     
-    Supports 4 document types:
-    - FIR: First Information Report
-    - ID_CARD: Identity document
-    - CHARGE_SHEET: Legal charge document
-    - POLICE_REPORT: General police report
-    """
 
     DOCUMENT_TYPES = ["FIR", "ID_CARD", "CHARGE_SHEET", "POLICE_REPORT"]
 
@@ -68,13 +53,7 @@ class DocumentClassifier:
 
     def __init__(self, translation_json_path: Optional[str] = None, 
                  model_path: str = "models/distilbert_classifier"):
-        """
-        Initialize the Document Classifier.
         
-        Args:
-            translation_json_path: Path to translated JSON from translate.py module
-            model_path: Path to fine-tuned DistilBERT model directory
-        """
         self.translation_json_path = translation_json_path
         self.model_path = Path(model_path)
         
@@ -88,7 +67,7 @@ class DocumentClassifier:
         self._load_model()
 
     def _setup_device(self):
-        """Setup CPU/GPU device for model inference."""
+        
         if HAS_TRANSFORMERS:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             logger.info(f"Using device: {self.device}")
@@ -96,7 +75,7 @@ class DocumentClassifier:
             logger.warning("PyTorch not available, will use keyword fallback only")
 
     def _load_model(self):
-        """Load fine-tuned DistilBERT model from disk."""
+        
         if not HAS_TRANSFORMERS:
             logger.warning("Transformers library not available, using keyword fallback")
             self.using_fallback = True
@@ -110,12 +89,44 @@ class DocumentClassifier:
             self.using_fallback = True
             return
 
+        required_files = ["config.json", "model.safetensors", "tokenizer.json"]
+        missing_files = [
+            file_name
+            for file_name in required_files
+            if not (self.model_path / file_name).exists()
+        ]
+        if missing_files:
+            logger.warning(
+                "Model directory is incomplete at %s. Missing files: %s. "
+                "Using keyword fallback.",
+                self.model_path,
+                ", ".join(missing_files),
+            )
+            self.using_fallback = True
+            return
+
         try:
             logger.info(f"Loading DistilBERT model from {self.model_path}")
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                str(self.model_path),
-                local_files_only=True
-            )
+
+            # Prefer fast tokenizer, but gracefully fallback to slow tokenizer
+            # when backend tokenizer dependencies are unavailable.
+            try:
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    str(self.model_path),
+                    local_files_only=True,
+                    use_fast=True
+                )
+            except Exception as tokenizer_error:
+                logger.warning(
+                    "Fast tokenizer unavailable (%s). Falling back to slow tokenizer.",
+                    tokenizer_error,
+                )
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    str(self.model_path),
+                    local_files_only=True,
+                    use_fast=False
+                )
+
             self.model = AutoModelForSequenceClassification.from_pretrained(
                 str(self.model_path),
                 local_files_only=True
@@ -129,16 +140,7 @@ class DocumentClassifier:
             self.using_fallback = True
 
     def _read_translation_json(self) -> str:
-        """
-        Read translated text from translation JSON file.
         
-        Supports multiple JSON formats:
-        - Translation output: 'translated_text' or 'original_text'
-        - OCR output: 'raw_text'
-        
-        Returns:
-            Translated text (or original if translation failed)
-        """
         if not self.translation_json_path:
             return ""
 
@@ -157,15 +159,7 @@ class DocumentClassifier:
             return ""
 
     def _classify_with_model(self, text: str) -> Tuple[str, float]:
-        """
-        Classify using fine-tuned DistilBERT model.
         
-        Args:
-            text: Document text to classify
-            
-        Returns:
-            Tuple of (document_type, confidence)
-        """
         if not self.model or not self.tokenizer:
             return "UNKNOWN", 0.0
 
@@ -194,15 +188,7 @@ class DocumentClassifier:
             return "UNKNOWN", 0.0
 
     def _classify_with_keywords(self, text: str) -> Tuple[str, float]:
-        """
-        Fallback keyword-based classification.
         
-        Args:
-            text: Document text to classify
-            
-        Returns:
-            Tuple of (document_type, confidence)
-        """
         text_lower = text.lower()
         scores = {}
 
@@ -221,12 +207,7 @@ class DocumentClassifier:
         return best_type, confidence
 
     def classify(self) -> bool:
-        """
-        Classify the document.
         
-        Returns:
-            True if classification succeeded, False otherwise
-        """
         try:
             # Read translated text if available
             text = self._read_translation_json()
@@ -261,21 +242,11 @@ class DocumentClassifier:
             return False
 
     def get_output_json(self) -> Dict:
-        """
-        Get classification result as JSON.
         
-        Returns:
-            Dictionary with classification results
-        """
         return self.classification_result
 
     def save_output(self, output_path: str):
-        """
-        Save classification result to JSON file.
         
-        Args:
-            output_path: Path to save JSON file
-        """
         try:
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(self.classification_result, f, indent=2, ensure_ascii=False)
@@ -285,7 +256,7 @@ class DocumentClassifier:
 
 
 def main():
-    """CLI interface for document classification."""
+    
     import argparse
 
     parser = argparse.ArgumentParser(

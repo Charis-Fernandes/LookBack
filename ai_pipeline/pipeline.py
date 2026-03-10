@@ -26,18 +26,18 @@ from extract_fields import LegalFieldExtractor
 class LookBackPipeline:
     """
     Complete document processing pipeline for law enforcement documents.
-    
+
     Processes:
     1. OCR: Extract text from image using Tesseract
     2. Classification: Classify document type using DistilBERT
     3. Field Extraction: Extract structured legal fields (FIR no, dates, sections)
     4. Detection: Object detection using YOLOv8
     """
-    
+
     def __init__(self, image_path: str, aggressive: bool = True, output_path: Optional[str] = None):
         """
         Initialize the pipeline.
-        
+
         Args:
             image_path: Path to input document image
             aggressive: Use aggressive OCR preprocessing for low-quality images
@@ -47,28 +47,28 @@ class LookBackPipeline:
         self.aggressive = aggressive
         self.output_path = output_path
         self.final_output = {}
-        
+
     def run(self) -> Dict:
         """
         Execute the complete pipeline: OCR → Classification → Extraction → Detection
-        
+
         Returns:
             Dictionary with processing results
         """
         print("\n" + "="*60)
         print("LookBack Document Processing Pipeline")
         print("="*60)
-        
+
         # Step 1: OCR
         print("\n[Step 1/4] Extracting text from image...")
         ocr_result = self._run_ocr()
         if ocr_result is None:
             print("ERROR: OCR extraction failed")
             return None
-        
+
         print(f"  [OK] Extracted {len(ocr_result.get('raw_text', ''))} characters")
         print(f"  [OK] OCR Confidence: {ocr_result.get('ocr_confidence', ocr_result.get('confidence', 0)):.2f}")
-        
+
         # Step 2: Classification
         print("\n[Step 2/4] Classifying document type...")
         classification_result = self._run_classification(ocr_result)
@@ -78,7 +78,7 @@ class LookBackPipeline:
         else:
             print(f"  [OK] Document Type: {classification_result['doc_type']}")
             print(f"  [OK] Classification Confidence: {classification_result['confidence']:.2f}")
-        
+
         # Step 3: Field Extraction
         print("\n[Step 3/4] Extracting legal fields...")
         extraction_result = self._run_field_extraction(ocr_result)
@@ -101,7 +101,7 @@ class LookBackPipeline:
                 print(f"  [OK] Complainant: {fields['complainant']}")
             if fields.get("acts_referenced"):
                 print(f"  [OK] Acts: {', '.join(fields['acts_referenced'])}")
-        
+
         # Step 4: Object Detection
         print("\n[Step 4/4] Running object detection (YOLO)...")
         detection_result = self._run_detection()
@@ -111,10 +111,10 @@ class LookBackPipeline:
         else:
             tags = detection_result.get("tags", [])
             print(f"  [OK] Detected {len(tags)} objects: {', '.join(tags) if tags else 'none'}")
-        
+
         # Combine all results
         ocr_confidence = ocr_result.get('ocr_confidence', ocr_result.get('confidence', 0))
-        
+
         self.final_output = {
             "image_path": str(self.image_path),
             "processing_status": "success",
@@ -135,13 +135,13 @@ class LookBackPipeline:
                 "text_preview": ocr_result.get('raw_text', '')[:200] + "..." if len(ocr_result.get('raw_text', '')) > 200 else ocr_result.get('raw_text', '')
             }
         }
-        
+
         # Save if output path specified
         if self.output_path:
             self._save_output()
-        
+
         return self.final_output
-    
+
     def _run_ocr(self) -> Optional[Dict]:
         """Run OCR on the image."""
         try:
@@ -154,23 +154,23 @@ class LookBackPipeline:
         except Exception as e:
             print(f"  ERROR: {str(e)}")
             return None
-    
+
     def _run_classification(self, ocr_result: Dict) -> Optional[Dict]:
         """Classify the document based on OCR text."""
         try:
             temp_ocr_json = "temp_ocr_output.json"
             with open(temp_ocr_json, 'w') as f:
                 json.dump(ocr_result, f)
-            
+
             classifier = DocumentClassifier(
                 translation_json_path=temp_ocr_json,
                 model_path="models/distilbert_classifier"
             )
-            
+
             if not classifier.classify():
                 print("  ERROR: Classification failed")
                 return None
-            
+
             Path(temp_ocr_json).unlink(missing_ok=True)
             return classifier.get_output_json()
         except Exception as e:
@@ -236,7 +236,7 @@ class LookBackPipeline:
             sys.stdout = sys.__stdout__
             print(f"  [WARN] Detection error: {e}")
             return None
-    
+
     def _save_output(self):
         """Save final output to JSON file."""
         try:
@@ -245,15 +245,15 @@ class LookBackPipeline:
             print(f"\n[OK] Results saved to: {self.output_path}")
         except Exception as e:
             print(f"ERROR: Could not save output: {str(e)}")
-    
+
     def print_summary(self):
         """Print a summary of the processing results."""
         if not self.final_output:
             print("No results to display")
             return
-        
+
         summary = self.final_output.get('summary', {})
-        
+
         print("\n" + "="*60)
         print("PROCESSING SUMMARY")
         print("="*60)
@@ -275,30 +275,30 @@ class LookBackPipeline:
 
 
 def main():
-    """Main entry point for the pipeline"""
+    """Main entry point for the pipeline."""
     parser = argparse.ArgumentParser(
         description="LookBack Document Processing Pipeline - OCR + Classification + Extraction + Detection"
     )
     parser.add_argument("image", help="Path to document image")
     parser.add_argument("--output", "-o", help="Output JSON file path", default="results.json")
     parser.add_argument("--aggressive", action="store_true", help="Use aggressive OCR preprocessing for low-quality images")
-    
+
     args = parser.parse_args()
-    
+
     # Check if image exists
     if not Path(args.image).exists():
         print(f"ERROR: Image file not found: {args.image}")
         sys.exit(1)
-    
+
     # Run pipeline
     pipeline = LookBackPipeline(
         image_path=args.image,
         aggressive=args.aggressive,
         output_path=args.output
     )
-    
+
     result = pipeline.run()
-    
+
     if result:
         pipeline.print_summary()
         print("\n[OK] Pipeline completed successfully!")

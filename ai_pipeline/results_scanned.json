@@ -1,0 +1,60 @@
+{
+  "image_path": "samples/fir_scanned.png",
+  "processing_status": "success",
+  "ocr": {
+    "raw_text": "FIRST INFORMATION REPORT (Under Sec. 173 B.N.S.8 2023) District PS: Year: FIR No.: Date: New Delhl CBUSCIWND 2024 RC- 16.10.2024 Act Sections: Sectione: 34, 120-B riw 166,167,177,193,201, 203,219,220,466,474 Suspected Offence- Criminal Conspiracy, Public servant disobeying of law with Intent to cause injury to any person, Public servant framing an incorrect document with intent to cause Injury, Furnishing falee information, Causing disappearance of evidence of an offence, or giving false information to screen offender, Public servant in judicial Custody corruptly making report etc. contrary to law, Commitment for trial or by person having authority who knows that his acting contrary to law, Forgery of record of court or of public register etc. and having possession of documents described in section 486 or 487 knowing It to be forged and Intending to used it as genuine. Day: Date: Time: Information received at PS: CBI, SPECIAL CRIME-IIl, NEW DELHI Entry No.:- 03 Date: 16.10.2024 Time: 1600 Hrs. Type of information (Written Oral): Written Ptace of occurrence Pune Clty, Maharashtra Diraction Distance from Beat No. Address Incase, the limit of this Police Station, then of PS District Name",
+    "ocr_confidence": 0.85
+  },
+  "classification": {
+    "doc_type": "FIR",
+    "confidence": 0.95,
+    "method": "Keywords",
+    "valid_types": [
+      "FIR",
+      "ID_CARD",
+      "CHARGE_SHEET",
+      "POLICE_REPORT"
+    ]
+  },
+  "field_extraction": {
+    "status": "success",
+    "fields_extracted": 5,
+    "confidence": 0.38,
+    "extracted_data": {
+      "date": "2024-10-16",
+      "sections": [
+        "486"
+      ],
+      "sections_detailed": [
+        {
+          "section": "486",
+          "description": "Unknown Section"
+        }
+      ],
+      "police_station": "CBI",
+      "district": "ance from Beat No"
+    }
+  },
+  "detection": {
+    "tags": [
+      "book"
+    ],
+    "confidence": 0.4
+  },
+  "summary": {
+    "detected_document_type": "FIR",
+    "ocr_confidence": 0.85,
+    "classification_confidence": 0.95,
+    "extraction_confidence": 0.38,
+    "fields_extracted": 5,
+    "fir_no": "N/A",
+    "date": "2024-10-16",
+    "sections": [
+      "486"
+    ],
+    "detected_objects": [
+      "book"
+    ],
+    "text_preview": "FIRST INFORMATION REPORT (Under Sec. 173 B.N.S.8 2023) District PS: Year: FIR No.: Date: New Delhl CBUSCIWND 2024 RC- 16.10.2024 Act Sections: Sectione: 34, 120-B riw 166,167,177,193,201, 203,219,220,..."
+  }
+}

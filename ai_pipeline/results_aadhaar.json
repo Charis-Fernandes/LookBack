@@ -1,0 +1,50 @@
+{
+  "image_path": "samples/aadhar1.jpg",
+  "processing_status": "success",
+  "ocr": {
+    "raw_text": "OZOZ/LL/LO peojuMog ANA AAT Government of India Unique Identification Authority of India aie Enrolment No.: 0648/00657/60999 To erat Prashant Sharma So Arvind Kumar Sharma MOH PARA NIKAT BARGAD BAREILLY FARIDPUR Faridpur Faridpur Bareilly Uttar Pradesh 243503 8445041087 Sgn Vented AL Baw pequaog ones HATH Your Aadhaar No. 5741 8202 5060 VID 9120 5052 0126 8373 Prashant Shama 09/10/1998 MALE 8202 5060 VID 9 AADHAAR errr Government of India WU HT WAT ST AUT a QR are XML/ He we art an gon INFORMATION Aadhaar is a proof of identity, not of citizenship. Verify identity using Secure QR Code/ Offline XML/ Online Authentication. This is electronically generated letter. A og atk aa Sarai UAT SIA FATA aren ite et iw wal au cad GH mAadhaar App Aadhaar is valid throughout the country. Aadhaar helps you avail various Government and non-Government services easily. Keep your mobile number email ID updated in Aadhaar. Carry Aadhaar in your smart phone use mAadhaar App. ClO TR BAR HW, Fave Address: C/O So Arvind Kumar Sharma, MOH PARA, NIKAT BARGAD, FARIDPUR, BAREILLY, Faridpur, Bareilly. Uttar Pradesh 243503 5741 8202 5060 VID 9120 50 www.uidai.gov.in",
+    "ocr_confidence": 0.62
+  },
+  "classification": {
+    "doc_type": "ID_CARD",
+    "confidence": 0.8,
+    "method": "Keywords",
+    "valid_types": [
+      "FIR",
+      "ID_CARD",
+      "CHARGE_SHEET",
+      "POLICE_REPORT"
+    ]
+  },
+  "field_extraction": {
+    "status": "success",
+    "fields_extracted": 2,
+    "confidence": 0.25,
+    "extracted_data": {
+      "date": "1998-10-09",
+      "sections": [],
+      "identifiers": {
+        "phone_numbers": [
+          "8445041087"
+        ],
+        "aadhaar": "574182025060"
+      }
+    }
+  },
+  "detection": {
+    "tags": [],
+    "confidence": 0.0
+  },
+  "summary": {
+    "detected_document_type": "ID_CARD",
+    "ocr_confidence": 0.62,
+    "classification_confidence": 0.8,
+    "extraction_confidence": 0.25,
+    "fields_extracted": 2,
+    "fir_no": "N/A",
+    "date": "1998-10-09",
+    "sections": [],
+    "detected_objects": [],
+    "text_preview": "OZOZ/LL/LO peojuMog ANA AAT Government of India Unique Identification Authority of India aie Enrolment No.: 0648/00657/60999 To erat Prashant Sharma So Arvind Kumar Sharma MOH PARA NIKAT BARGAD BAREIL..."
+  }
+}

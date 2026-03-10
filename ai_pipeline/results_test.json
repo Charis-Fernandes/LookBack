@@ -1,0 +1,45 @@
+{
+  "image_path": "samples/test_img.jpg",
+  "processing_status": "success",
+  "ocr": {
+    "raw_text": "sea INFORMATION REPORT Quy (Under Section 154 Cr. PC.) (iii) BTA Other Sections oF Occurence of offence Day from Pate to “tare ore (ata a7. Tick applicable portion) 00.00 4 03.00 03.00 3 06.00 06.004 09.00 09.008 12.00 12.004 15.00 15.00% 18.00 18.008 21.00 21.008 24.00 06.004 18.00 (10) 18.00 06.00 Information received at P. S. Date Time (cy wan stew, 19 arta Dae ‘General Diary Reference Entry No. war Type of information ate Oral er. i te Far zeae Fawr sie far O.P. Nam Place of Occurence (a). Directi and No. Co) a Ward Address of Occurence Nearest Adentiftable Place Village Taluka Dist. ere area In case, outside the limit of this Police Station Taluka Gay ST AWA A TET Permanent Address ofa ara 774 Name Father's Husbands Name waa Date of Birth Age 4 Nationality Place of Issue Sub-Caste Date of Issue ura Caste anf riers eget ere Fe re rare) (after a shi 1B ae ftrewe dar sem refer aa. rien Details Name Address of known Accused (Attach: separatc sheet, if necessary) (If suspect particular of ‘physical feature",
+    "ocr_confidence": 0.57
+  },
+  "classification": {
+    "doc_type": "FIR",
+    "confidence": 0.8,
+    "method": "Keywords",
+    "valid_types": [
+      "FIR",
+      "ID_CARD",
+      "CHARGE_SHEET",
+      "POLICE_REPORT"
+    ]
+  },
+  "field_extraction": {
+    "status": "success",
+    "fields_extracted": 2,
+    "confidence": 0.12,
+    "extracted_data": {
+      "sections": [],
+      "police_station": "Taluka Gay ST AWA A TET Permanent Address ofa ara",
+      "district": "ere area In case"
+    }
+  },
+  "detection": {
+    "tags": [],
+    "confidence": 0.0
+  },
+  "summary": {
+    "detected_document_type": "FIR",
+    "ocr_confidence": 0.57,
+    "classification_confidence": 0.8,
+    "extraction_confidence": 0.12,
+    "fields_extracted": 2,
+    "fir_no": "N/A",
+    "date": "N/A",
+    "sections": [],
+    "detected_objects": [],
+    "text_preview": "sea INFORMATION REPORT Quy (Under Section 154 Cr. PC.) (iii) BTA Other Sections oF Occurence of offence Day from Pate to “tare ore (ata a7. Tick applicable portion) 00.00 4 03.00 03.00 3 06.00 06.004 ..."
+  }
+}

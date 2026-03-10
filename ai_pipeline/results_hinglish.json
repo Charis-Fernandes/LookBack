@@ -1,0 +1,49 @@
+{
+  "image_path": "samples/sample_hinglish_fir.png",
+  "processing_status": "success",
+  "ocr": {
+    "raw_text": "vA, a qm (Ramm): 0.8, Your ad). 2018 Tine of OR Morey 19.10 2 One. Aen 1 ame of Date Prom Dew Te 6 Time afl: 6 Yume from 10:00 he Thee 16:20 bv. received 06 quem FE): Date Thane (UWE): 16:10 ve Story Ce Me. 00:32 4 Type et ee 6 Place of and tom a abt Tei): SOUTHEAST, 15 Best Ne; Te Cane, the of Hin Gentian, wen (att, erat fame of RABOGA SUNDARGARH interment hte Pomer'e Name (fem a1 of creer 1083 nA MEA Cate of ingen ent Wy. Pane of (ert) ort ar (eb detain Cond. Veter Card Penapert AMD) Ne. Type ey",
+    "ocr_confidence": 0.34
+  },
+  "classification": {
+    "doc_type": "POLICE_REPORT",
+    "confidence": 0.4,
+    "method": "Keywords",
+    "valid_types": [
+      "FIR",
+      "ID_CARD",
+      "CHARGE_SHEET",
+      "POLICE_REPORT"
+    ]
+  },
+  "field_extraction": {
+    "status": "no_fields_found",
+    "fields_extracted": 0,
+    "confidence": 0.0,
+    "extracted_data": {
+      "sections": []
+    }
+  },
+  "detection": {
+    "tags": [
+      "book",
+      "laptop"
+    ],
+    "confidence": 0.33
+  },
+  "summary": {
+    "detected_document_type": "POLICE_REPORT",
+    "ocr_confidence": 0.34,
+    "classification_confidence": 0.4,
+    "extraction_confidence": 0.0,
+    "fields_extracted": 0,
+    "fir_no": "N/A",
+    "date": "N/A",
+    "sections": [],
+    "detected_objects": [
+      "book",
+      "laptop"
+    ],
+    "text_preview": "vA, a qm (Ramm): 0.8, Your ad). 2018 Tine of OR Morey 19.10 2 One. Aen 1 ame of Date Prom Dew Te 6 Time afl: 6 Yume from 10:00 he Thee 16:20 bv. received 06 quem FE): Date Thane (UWE): 16:10 ve Story ..."
+  }
+}

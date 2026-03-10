@@ -1,17 +1,15 @@
-"""
-OCR Module for LookBack Document Processing System
-Handles image preprocessing and text extraction using Tesseract OCR
-Automatically translates extracted text using IndicTrans2
-"""
+
 
 import json
 import argparse
 import sys
+import re
 from pathlib import Path
 import cv2
 import pytesseract
 from PIL import Image
 import numpy as np
+from pytesseract import Output
 
 # Import translator module for automatic translation
 try:
@@ -29,44 +27,50 @@ if platform.system() == "Windows":
 
 
 class OCRModule:
-    """
-    Optical Character Recognition module for extracting text from document images.
     
-    Attributes:
-        image_path (str): Path to the input image file
-        tesseract_path (str): Path to Tesseract executable (Windows-specific)
-    """
-    
-    def __init__(self, image_path, tesseract_path=None, aggressive=False, auto_translate=True):
-        """
-        Initialize OCR Module
-        
-        Args:
-            image_path (str): Path to the input image
-            tesseract_path (str, optional): Path to tesseract.exe (required on Windows)
-            aggressive (bool, optional): Use aggressive preprocessing for low-quality scans
-            auto_translate (bool, optional): Automatically translate extracted text using IndicTrans2
-        """
+    def __init__(
+        self,
+        image_path,
+        tesseract_path=None,
+        aggressive=False,
+        auto_translate=True,
+        fast_mode=False,
+        min_token_conf=35,
+    ):
         self.image_path = image_path
         self.confidence = 0.0
         self.raw_text = ""
         self.aggressive = aggressive
         self.auto_translate = auto_translate
+        self.fast_mode = fast_mode
+        self.min_token_conf = min_token_conf
         self.translated_text = ""
         self.detected_language = None
         self.translation_confidence = 0.0
+        self._installed_languages = set()
         
-        # Set Tesseract path if provided (important for Windows)
         if tesseract_path:
             pytesseract.pytesseract.tesseract_cmd = tesseract_path
+
+    def detect_installed_languages(self):
+
+        try:
+            languages = pytesseract.get_languages(config="")
+            self._installed_languages = set(languages)
+        except Exception:
+            self._installed_languages = set()
+
+    def build_language_candidates(self):
+
+        # Use multilingual OCR only when language packs are actually available.
+        if {"eng", "hin", "mar"}.issubset(self._installed_languages):
+            return ["eng+hin+mar", "eng"]
+
+        # If Hindi/Marathi aren't visible to Tesseract, avoid costly failed attempts.
+        return ["eng"]
     
     def validate_image(self):
-        """
-        Validate if image file exists and is readable
         
-        Returns:
-            bool: True if image is valid, False otherwise
-        """
         try:
             if not Path(self.image_path).exists():
                 raise FileNotFoundError(f"Image file not found: {self.image_path}")
@@ -82,16 +86,7 @@ class OCRModule:
             return False
     
     def deskew_image(self, image):
-        """
-        Deskew (straighten) image to improve OCR accuracy
-        Rotates image to correct tilt/rotation
         
-        Args:
-            image (numpy.ndarray): Input image
-            
-        Returns:
-            numpy.ndarray: Deskewed image
-        """
         try:
             # Convert to grayscale if needed
             if len(image.shape) == 3:
@@ -144,25 +139,7 @@ class OCRModule:
             return image
     
     def preprocess_image(self, image):
-        """
-        Preprocess image for better OCR accuracy
         
-        Preprocessing steps:
-        1. Deskew (straighten) image
-        2. Resize image for better OCR
-        3. Convert to grayscale
-        4. Apply contrast enhancement
-        5. Apply denoising
-        6. Apply thresholding
-        7. Morphological operations
-        
-        
-        Args:
-            image (numpy.ndarray): Input image
-            
-        Returns:
-            numpy.ndarray: Preprocessed image
-        """
         try:
             # Step 1: Deskew (straighten) image
             image = self.deskew_image(image)
@@ -210,55 +187,166 @@ class OCRModule:
         except Exception as e:
             print(f"Preprocessing error: {str(e)}")
             return image
+
+    def generate_ocr_variants(self, image):
+
+        variants = []
+
+        # Variant 1: Existing preprocessing pipeline
+        primary = self.preprocess_image(image)
+        variants.append(("primary", primary))
+
+        if self.fast_mode:
+            return variants
+
+        # Variant 2: Adaptive thresholding, often better for uneven lighting
+        try:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            denoised = cv2.bilateralFilter(gray, 9, 75, 75)
+            adaptive = cv2.adaptiveThreshold(
+                denoised,
+                255,
+                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv2.THRESH_BINARY,
+                31,
+                11,
+            )
+            variants.append(("adaptive", adaptive))
+        except Exception:
+            pass
+
+        # Variant 3: Upscaled grayscale for tiny/compressed text
+        try:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            h, w = gray.shape[:2]
+            if w < 1600:
+                upscaled = cv2.resize(gray, (w * 2, h * 2), interpolation=cv2.INTER_CUBIC)
+            else:
+                upscaled = gray
+            clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
+            upscaled_enhanced = clahe.apply(upscaled)
+            _, upscaled_bin = cv2.threshold(
+                upscaled_enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+            )
+            variants.append(("upscaled", upscaled_bin))
+        except Exception:
+            pass
+
+        return variants
+
+    def _is_noise_token(self, token):
+
+        token = token.strip()
+        if not token:
+            return True
+
+        # Keep Aadhaar-like and numeric IDs.
+        if re.fullmatch(r"[0-9]{4,}", token):
+            return False
+        if re.fullmatch(r"[0-9]{4}\s?[0-9]{4}\s?[0-9]{4}", token):
+            return False
+
+        # Drop tiny punctuation-only tokens.
+        if re.fullmatch(r"[^\w\u0900-\u097F]+", token):
+            return True
+
+        alnum = sum(ch.isalnum() for ch in token)
+        alpha = sum(ch.isalpha() for ch in token)
+        digit = sum(ch.isdigit() for ch in token)
+        punct = len(token) - alnum
+
+        # Typical OCR junk: heavy punctuation and very little meaningful text.
+        if len(token) <= 3 and punct >= 2:
+            return True
+        if alpha == 0 and digit <= 1 and punct >= 1:
+            return True
+
+        return False
+
+    def _extract_with_confidence(self, image, lang, config):
+
+        pil_image = Image.fromarray(image)
+
+        # Use token-level confidences and ignore invalid values (-1)
+        data = pytesseract.image_to_data(
+            pil_image, lang=lang, config=config, output_type=Output.DICT
+        )
+        conf_values = []
+        kept_tokens = []
+        conf_list = data.get("conf", [])
+        text_list = data.get("text", [])
+        for value, token in zip(conf_list, text_list):
+            try:
+                confidence = float(value)
+                if confidence >= self.min_token_conf and token.strip() and not self._is_noise_token(token):
+                    kept_tokens.append(token.strip())
+                if confidence >= 0:
+                    conf_values.append(confidence)
+            except (TypeError, ValueError):
+                continue
+
+        mean_conf = (sum(conf_values) / len(conf_values)) / 100 if conf_values else 0.0
+
+        text = " ".join(kept_tokens).strip()
+        if not text:
+            # Fallback to standard OCR output if filtering removed everything.
+            text = pytesseract.image_to_string(pil_image, lang=lang, config=config)
+
+        clean_text = text.strip()
+        if clean_text:
+            printable_chars = sum(1 for c in clean_text if c.isprintable())
+            text_quality = printable_chars / max(1, len(clean_text))
+        else:
+            text_quality = 0.0
+
+        # Blend OCR engine confidence with basic text sanity score
+        score = (0.8 * mean_conf) + (0.2 * text_quality)
+        return text, mean_conf, score
     
     def extract_text(self):
-        """
-        Extract text from image using Tesseract OCR
         
-        Returns:
-            bool: True if extraction successful, False otherwise
-        """
         try:
-            # Read image
             image = cv2.imread(self.image_path)
             if image is None:
                 raise ValueError("Failed to read image")
-            
-            # Preprocess image
-            processed = self.preprocess_image(image)
-            
-            # Convert numpy array to PIL Image for pytesseract
-            pil_image = Image.fromarray(processed)
-            
-            # Extract text using Tesseract with multi-language support
-            # --oem 1: LSTM neural net mode (best accuracy)
-            # --psm 3: Auto page segmentation (best for mixed content)
-            # lang: English + Hindi + Marathi (Indian law enforcement docs)
-            config = r'--oem 1 --psm 3'
-            
-            # Try with multiple languages (English + Hindi + Marathi)
-            try:
-                self.raw_text = pytesseract.image_to_string(
-                    pil_image, 
-                    lang='eng+hin+mar',  # Multi-language support
-                    config=config
-                )
-            except Exception as lang_error:
-                # Fallback to English-only if Hindi/Marathi not installed
-                print(f"  Note: Using English-only (install Hindi/Marathi data for better results)")
-                self.raw_text = pytesseract.image_to_string(pil_image, config=config)
-            
-            # Calculate confidence (Tesseract doesn't provide direct confidence for full text)
-            # Better estimate: text length normalized
-            if self.raw_text.strip():
-                text_length = len(self.raw_text.strip())
-                # Award confidence based on reasonable text length (200-2000 chars is good)
-                if text_length > 100:
-                    self.confidence = min(0.90, 0.50 + (text_length / 5000))
-                else:
-                    self.confidence = max(0.30, text_length / 500)
-            else:
-                self.confidence = 0.0
+
+            self.detect_installed_languages()
+
+            variants = self.generate_ocr_variants(image)
+            configs = [r"--oem 1 --psm 3"] if self.fast_mode else [r"--oem 1 --psm 3", r"--oem 1 --psm 6"]
+            lang_candidates = self.build_language_candidates()
+
+            best_text = ""
+            best_conf = 0.0
+            best_score = -1.0
+            used_fallback_lang = ("eng+hin+mar" not in lang_candidates)
+
+            for variant_name, variant_image in variants:
+                for config in configs:
+                    successful = False
+                    for lang in lang_candidates:
+                        try:
+                            text, mean_conf, score = self._extract_with_confidence(
+                                variant_image, lang=lang, config=config
+                            )
+                            successful = True
+
+                            if text.strip() and score > best_score:
+                                best_text = text
+                                best_conf = mean_conf
+                                best_score = score
+                        except Exception:
+                            continue
+
+                    # If no language worked for this pass, move to next pass
+                    if not successful:
+                        continue
+
+            if used_fallback_lang:
+                print("  Note: Hindi/Marathi language data not detected by Tesseract runtime; using English-only fallback")
+
+            self.raw_text = best_text
+            self.confidence = max(0.0, min(1.0, best_conf))
             
             return True
         except pytesseract.TesseractNotFoundError:
@@ -270,12 +358,7 @@ class OCRModule:
             return False
     
     def translate_text(self):
-        """
-        Translate extracted text using IndicTrans2
         
-        Returns:
-            bool: True if translation succeeded, False otherwise
-        """
         if not TRANSLATOR_AVAILABLE or not self.auto_translate:
             return False
         
@@ -296,12 +379,7 @@ class OCRModule:
         return False
     
     def get_output_json(self):
-        """
-        Generate JSON output with extracted text, translation, and confidence
         
-        Returns:
-            dict: Output JSON with raw_text, translated_text, and metadata
-        """
         output = {
             "raw_text": self.raw_text.strip(),
             "ocr_confidence": round(self.confidence, 2)
@@ -317,12 +395,7 @@ class OCRModule:
         return output
     
     def process(self):
-        """
-        Complete OCR pipeline: validate, extract, translate, return JSON
         
-        Returns:
-            dict: JSON output or None if processing failed
-        """
         if not self.validate_image():
             return None
         
@@ -338,10 +411,7 @@ class OCRModule:
 
 
 def main():
-    """
-    Command-line interface for OCR module
-    Usage: python ocr.py <image_path> [--tesseract-path path/to/tesseract.exe]
-    """
+    
     parser = argparse.ArgumentParser(
         description="LookBack OCR Module - Extract text from document images"
     )
@@ -362,6 +432,17 @@ def main():
         help="Use aggressive preprocessing for low-quality/scanned documents"
     )
     parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="Use a faster OCR path (lower latency, slightly lower recall on hard images)"
+    )
+    parser.add_argument(
+        "--min-token-conf",
+        type=int,
+        default=35,
+        help="Minimum token confidence (0-100) to keep OCR tokens in output (default: 35)"
+    )
+    parser.add_argument(
         "--no-translate",
         action="store_true",
         help="Skip automatic translation (IndicTrans2)"
@@ -380,10 +461,14 @@ def main():
         args.image_path, 
         args.tesseract_path, 
         aggressive=args.aggressive,
-        auto_translate=not args.no_translate
+        auto_translate=not args.no_translate,
+        fast_mode=args.fast,
+        min_token_conf=max(0, min(100, args.min_token_conf))
     )
     if args.aggressive:
         print("  Using aggressive preprocessing for low-quality images...")
+    if args.fast:
+        print("  Using fast OCR mode for lower latency...")
     
     result = ocr.process()
     
