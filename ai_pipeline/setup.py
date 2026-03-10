@@ -1,7 +1,4 @@
-"""
-Quick Setup and Verification Script for LookBack
-Automates environment setup and dependency installation
-"""
+
 
 import subprocess
 import sys
@@ -10,14 +7,14 @@ from pathlib import Path
 
 
 def print_section(title):
-    """Print formatted section header"""
+    
     print("\n" + "="*70)
     print(f"  {title}")
     print("="*70)
 
 
 def run_command(cmd, description):
-    """Run command and report status"""
+    
     try:
         print(f"  → {description}...")
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
@@ -35,7 +32,7 @@ def run_command(cmd, description):
 
 
 def check_python_version():
-    """Verify Python version is 3.11+"""
+    
     print_section("1. Python Version Check")
     version = sys.version_info
     version_str = f"{version.major}.{version.minor}.{version.micro}"
@@ -51,7 +48,7 @@ def check_python_version():
 
 
 def check_venv():
-    """Check if virtual environment is activated"""
+    
     print_section("2. Virtual Environment Check")
     
     in_venv = sys.prefix != sys.base_prefix
@@ -69,7 +66,7 @@ def check_venv():
 
 
 def check_tesseract():
-    """Check if Tesseract is installed"""
+    
     print_section("3. Tesseract OCR Check")
     
     result = subprocess.run("tesseract --version", shell=True, capture_output=True, text=True)
@@ -87,7 +84,7 @@ def check_tesseract():
 
 
 def install_requirements():
-    """Install Python packages from requirements.txt"""
+    
     print_section("4. Installing Python Packages")
     
     req_file = "requirements.txt"
@@ -100,7 +97,7 @@ def install_requirements():
 
 
 def verify_packages():
-    """Verify all required packages are installed"""
+    
     print_section("5. Package Verification")
     
     packages = {
@@ -123,7 +120,7 @@ def verify_packages():
 
 
 def check_project_structure():
-    """Verify project files exist"""
+    
     print_section("6. Project Structure Check")
     
     required_files = [
@@ -159,7 +156,7 @@ def check_project_structure():
 
 
 def run_tests():
-    """Run test suites"""
+    
     print_section("7. Running Tests")
     
     # Create sample data
@@ -181,7 +178,7 @@ def run_tests():
 
 
 def print_next_steps():
-    """Print instructions for next steps"""
+    
     print_section("Next Steps")
     
     print("""
@@ -206,7 +203,7 @@ def print_next_steps():
 
 
 def main():
-    """Run complete setup verification"""
+    
     print("\n")
     print("╔" + "="*68 + "╗")
     print("║" + " "*15 + "LookBack Setup and Verification Script" + " " * 15 + "║")
