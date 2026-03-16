@@ -390,7 +390,7 @@ export default function DocumentScanner() {
             onPress={() => { setInputMode('esp32'); setCapturedImageUri(null); }}
           >
             <Text style={[styles.modeTabText, inputMode === 'esp32' && styles.modeTabTextActive]}>
-              📡 ESP32-CAM
+              [ESP32 LINK]
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -398,7 +398,7 @@ export default function DocumentScanner() {
             onPress={() => { setInputMode('camera'); setCapturedImageUri(null); }}
           >
             <Text style={[styles.modeTabText, inputMode === 'camera' && styles.modeTabTextActive]}>
-              📷 Camera
+              [DEVICE CAM]
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -406,7 +406,7 @@ export default function DocumentScanner() {
             onPress={() => { setInputMode('upload'); setCapturedImageUri(null); }}
           >
             <Text style={[styles.modeTabText, inputMode === 'upload' && styles.modeTabTextActive]}>
-              📁 Upload
+              [LOCAL FILES]
             </Text>
           </TouchableOpacity>
         </View>
@@ -429,19 +429,28 @@ export default function DocumentScanner() {
               `}
               renderLoading={() => (
                 <View style={styles.loadingOverlay}>
-                  <ActivityIndicator size="large" color="#3b82f6" />
-                  <Text style={styles.loadingText}>Loading ESP32-CAM stream...</Text>
+                  <ActivityIndicator size="large" color="#475569" />
+                  <Text style={styles.loadingText}>AWAITING DATA STREAM...</Text>
                 </View>
               )}
             />
             {/* Connection Status */}
             <View style={[styles.statusBadge, isConnected ? styles.statusConnected : styles.statusDisconnected]}>
               <Text style={styles.statusText}>
-                {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+                {isConnected ? 'NODE CONNECTED' : 'SIGNAL LOST'}
               </Text>
             </View>
             {/* Scan Frame */}
             <View style={styles.scanFrame} />
+            
+            {/* Tactical Crosshair */}
+            <View style={styles.crosshairContainer} pointerEvents="none">
+              <View style={styles.crosshairCenter} />
+              <View style={styles.crosshairTop} />
+              <View style={styles.crosshairBottom} />
+              <View style={styles.crosshairLeft} />
+              <View style={styles.crosshairRight} />
+            </View>
           </View>
         ) : (
           /* Camera / Upload Image Preview */
@@ -450,11 +459,11 @@ export default function DocumentScanner() {
               <Image source={{ uri: capturedImageUri }} style={styles.capturedImage} />
             ) : (
               <View style={styles.cameraPlaceholder}>
-                <Text style={styles.cameraIcon}>{inputMode === 'camera' ? '📷' : '📁'}</Text>
+                <Text style={styles.cameraIcon}>{'>_'}</Text>
                 <Text style={styles.cameraText}>
                   {inputMode === 'camera'
-                    ? 'Tap "Take Photo" to capture a document'
-                    : 'Tap "Upload Image" to select from gallery'}
+                    ? 'AWAITING LOCAL CAPTURE'
+                    : 'AWAITING FILE SELECTION'}
                 </Text>
               </View>
             )}
@@ -464,19 +473,19 @@ export default function DocumentScanner() {
         {/* AI Server Status + Instructions */}
         <View style={styles.instructionsCard}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <Text style={styles.instructionsTitle}>📋 Document Scanning</Text>
+            <Text style={styles.instructionsTitle}>INGESTION PROTOCOL</Text>
             <View style={[styles.aiBadge, aiServerOnline ? styles.aiOnline : styles.aiOffline]}>
               <Text style={styles.aiBadgeText}>
-                {aiServerOnline ? '🤖 AI Online' : '🤖 AI Offline'}
+                {aiServerOnline ? 'AI PIPELINE: ONLINE' : 'AI PIPELINE: OFFLINE'}
               </Text>
             </View>
           </View>
           <Text style={styles.instructionText}>
             {inputMode === 'esp32'
-              ? '1. Position document in front of ESP32-CAM\n2. Align within the blue frame\n3. Tap "Scan Document" to capture & process\n4. AI will classify, extract fields & detect objects'
+              ? '1. ALIGN DOCUMENT WITHIN BOUNDARIES\n2. INITIATE HARDWARE CAPTURE COMMAND\n3. VERIFY CLASSIFICATION STATUS'
               : inputMode === 'camera'
-              ? '1. Tap "Take Photo" to open device camera\n2. Capture a clear photo of the document\n3. AI processes automatically in the background'
-              : '1. Tap "Upload Image" to open gallery\n2. Select a document image\n3. AI processes automatically in the background'}
+              ? '1. UTILIZE ONBOARD SENSOR\n2. VERIFY LIGHTING CONDITIONS\n3. EXPORT TO LOG'
+              : '1. ACCESS SECURE PARTITION\n2. SELECT TARGET DOCUMENT\n3. INITIATE AI PARSING'}
           </Text>
         </View>
 
@@ -492,8 +501,7 @@ export default function DocumentScanner() {
                 <ActivityIndicator color="#ffffff" />
               ) : (
                 <>
-                  <Text style={styles.scanButtonIcon}>📄</Text>
-                  <Text style={styles.scanButtonText}>Scan Document</Text>
+                  <Text style={styles.scanButtonText}>[ EXECUTE HARDWARE SCAN ]</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -509,8 +517,7 @@ export default function DocumentScanner() {
                 <ActivityIndicator color="#ffffff" />
               ) : (
                 <>
-                  <Text style={styles.scanButtonIcon}>📷</Text>
-                  <Text style={styles.scanButtonText}>Take Photo</Text>
+                  <Text style={styles.scanButtonText}>[ ENGAGE DEVICE CAMERA ]</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -523,11 +530,10 @@ export default function DocumentScanner() {
               disabled={isScanning}
             >
               {isScanning ? (
-                <ActivityIndicator color="#ffffff" />
+                <ActivityIndicator color="#f8fafc" />
               ) : (
                 <>
-                  <Text style={styles.scanButtonIcon}>📁</Text>
-                  <Text style={styles.scanButtonText}>Upload Image</Text>
+                  <Text style={styles.scanButtonText}>[ UPLOAD FROM LOCAL FS ]</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -540,7 +546,7 @@ export default function DocumentScanner() {
                 style={styles.secondaryButton}
                 onPress={() => setShowUrlModal(true)}
               >
-                <Text style={styles.secondaryButtonText}>🔧 Change URL</Text>
+                <Text style={styles.secondaryButtonText}>EDIT ENDPOINT</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.secondaryButton}
@@ -550,7 +556,7 @@ export default function DocumentScanner() {
                   setStreamUrl(streamUrl + '?t=' + Date.now());
                 }}
               >
-                <Text style={styles.secondaryButtonText}>🔄 Reconnect</Text>
+                <Text style={styles.secondaryButtonText}>FORCE RECONNECT</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -560,29 +566,32 @@ export default function DocumentScanner() {
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
             <Text style={styles.statValue}>{scanCount}</Text>
-            <Text style={styles.statLabel}>Total Scans</Text>
+            <Text style={styles.statLabel}>PROCESSED DOCS</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statValue}>{aiServerOnline ? '🟢' : '🔴'}</Text>
-            <Text style={styles.statLabel}>AI Server</Text>
+            <Text style={[styles.statValue, { color: aiServerOnline ? '#10b981' : '#b91c1c' }]}>{aiServerOnline ? 'ACTIVE' : 'DOWN'}</Text>
+            <Text style={styles.statLabel}>PIPELINE STATUS</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statValue}>{inputMode === 'esp32' ? (isConnected ? '🟢' : '🔴') : '📱'}</Text>
-            <Text style={styles.statLabel}>{inputMode === 'esp32' ? 'ESP32' : 'Device'}</Text>
+            <Text style={[styles.statValue, { color: inputMode === 'esp32' ? (isConnected ? '#10b981' : '#b91c1c') : '#3b82f6' }]}>
+              {inputMode === 'esp32' ? (isConnected ? 'SYNCED' : 'AWAITING') : 'READY'}
+            </Text>
+            <Text style={styles.statLabel}>INPUT HANDLER</Text>
           </View>
         </View>
+        <View style={{ height: 40 }} />
       </ScrollView>
 
       {/* URL Configuration Modal */}
       <Modal
         visible={showUrlModal}
         transparent={true}
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowUrlModal(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>🔧 Configure ESP32-CAM URL</Text>
+            <Text style={styles.modalTitle}>CONFIGURE UPLINK NODE</Text>
             <TextInput
               style={styles.modalInput}
               value={tempUrl}
@@ -596,13 +605,13 @@ export default function DocumentScanner() {
                 style={styles.modalCancelButton}
                 onPress={() => setShowUrlModal(false)}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={styles.modalCancelText}>ABORT</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalSaveButton}
                 onPress={handleChangeUrl}
               >
-                <Text style={styles.modalSaveText}>Save</Text>
+                <Text style={styles.modalSaveText}>INITIALIZE</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -615,17 +624,19 @@ export default function DocumentScanner() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
-    padding: 24,
+    backgroundColor: '#f1f5f9',
+    padding: 18,
   },
   content: {
     flex: 1,
   },
   loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#64748b',
-    fontWeight: '500',
+    marginTop: 16,
+    fontSize: 11,
+    color: '#f8fafc',
+    fontWeight: '800',
+    letterSpacing: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   permissionContainer: {
     flex: 1,
@@ -640,7 +651,7 @@ const styles = StyleSheet.create({
   permissionTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#0f172a',
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -652,35 +663,28 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   permissionButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#0f172a',
     paddingHorizontal: 32,
     paddingVertical: 16,
-    borderRadius: 12,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    borderRadius: 4,
   },
   permissionButtonText: {
     color: '#ffffff',
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   cameraContainer: {
     position: 'relative',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
+    backgroundColor: '#000000',
+    borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    borderWidth: 2,
+    borderColor: '#1e293b',
   },
   camera: {
     height: 400,
+    backgroundColor: '#000000',
   },
   capturedImage: {
     height: 400,
@@ -688,19 +692,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
   },
   cameraPlaceholder: {
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#cbd5e1',
     height: 400,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cameraIcon: {
-    fontSize: 80,
+    fontSize: 40,
     marginBottom: 12,
+    color: '#475569',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontWeight: '800',
   },
   cameraText: {
-    fontSize: 16,
-    color: '#64748b',
-    fontWeight: '500',
+    fontSize: 11,
+    color: '#475569',
+    fontWeight: '800',
+    letterSpacing: 1,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   scanFrame: {
     position: 'absolute',
@@ -708,62 +717,81 @@ const styles = StyleSheet.create({
     left: 40,
     right: 40,
     height: 280,
-    borderWidth: 3,
-    borderColor: '#3b82f6',
-    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderRadius: 4,
     borderStyle: 'dashed',
+  },
+  crosshairContainer: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  crosshairCenter: {
+    width: 2, height: 2, backgroundColor: 'rgba(255,255,255,0.7)',
+  },
+  crosshairTop: {
+    position: 'absolute', top: '35%', width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  crosshairBottom: {
+    position: 'absolute', bottom: '35%', width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  crosshairLeft: {
+    position: 'absolute', left: '35%', width: 20, height: 1, backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  crosshairRight: {
+    position: 'absolute', right: '35%', width: 20, height: 1, backgroundColor: 'rgba(255,255,255,0.5)',
   },
   instructionsCard: {
     backgroundColor: '#ffffff',
-    padding: 20,
-    borderRadius: 12,
+    padding: 16,
+    borderRadius: 4,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
   },
   instructionsTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 12,
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#0f172a',
+    letterSpacing: 1,
   },
   instructionText: {
-    fontSize: 14,
+    fontSize: 10,
     color: '#475569',
-    lineHeight: 22,
+    lineHeight: 20,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontWeight: '700',
   },
   actionContainer: {
     marginBottom: 20,
   },
   scanButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#0f172a',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 18,
-    borderRadius: 12,
+    borderRadius: 4,
     marginBottom: 12,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#000000',
   },
   scanButtonDisabled: {
     backgroundColor: '#94a3b8',
-    shadowColor: '#94a3b8',
+    borderColor: '#64748b',
   },
   scanButtonIcon: {
-    fontSize: 24,
+    fontSize: 20,
     marginRight: 10,
   },
   scanButtonText: {
     color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   secondaryButtons: {
     flexDirection: 'row',
@@ -771,17 +799,18 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f1f5f9',
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 4,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#cbd5e1',
   },
   secondaryButtonText: {
-    fontSize: 14,
+    fontSize: 10,
     color: '#475569',
-    fontWeight: '600',
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   statsRow: {
     flexDirection: 'row',
@@ -791,24 +820,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ffffff',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 4,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#3b82f6',
-    marginBottom: 4,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0f172a',
+    marginBottom: 6,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 9,
     color: '#64748b',
     textAlign: 'center',
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   loadingOverlay: {
     position: 'absolute',
@@ -816,7 +845,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: 'rgba(0,0,0,0.85)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -824,58 +853,61 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 16,
     right: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 4,
+    borderWidth: 1,
   },
   statusConnected: {
     backgroundColor: '#d1fae5',
+    borderColor: '#059669',
   },
   statusDisconnected: {
     backgroundColor: '#fee2e2',
+    borderColor: '#b91c1c',
   },
   statusText: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: '#0f172a',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContent: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
+    borderRadius: 4,
     padding: 24,
     width: '100%',
     maxWidth: 400,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1e293b',
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0f172a',
     marginBottom: 16,
     textAlign: 'center',
+    letterSpacing: 1,
   },
   modalInput: {
-    backgroundColor: '#f1f5f9',
-    borderRadius: 8,
+    backgroundColor: '#f8fafc',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
     padding: 14,
-    fontSize: 14,
-    color: '#1e293b',
+    fontSize: 12,
+    color: '#0f172a',
     marginBottom: 20,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontWeight: '600',
   },
   modalButtons: {
     flexDirection: 'row',
@@ -885,140 +917,84 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f1f5f9',
     padding: 14,
-    borderRadius: 8,
+    borderRadius: 4,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
   },
   modalCancelText: {
-    fontSize: 14,
-    color: '#64748b',
-    fontWeight: '600',
+    fontSize: 10,
+    color: '#475569',
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   modalSaveButton: {
     flex: 1,
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#0f172a',
     padding: 14,
-    borderRadius: 8,
+    borderRadius: 4,
     alignItems: 'center',
   },
   modalSaveText: {
-    fontSize: 14,
+    fontSize: 10,
     color: '#ffffff',
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: 1,
   },
-  // ═══ AI Pipeline Styles ═══
   aiBadge: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 2,
+    borderWidth: 1,
   },
   aiOnline: {
-    backgroundColor: '#d1fae5',
+    backgroundColor: '#f8fafc',
+    borderColor: '#10b981',
   },
   aiOffline: {
-    backgroundColor: '#fee2e2',
+    backgroundColor: '#f8fafc',
+    borderColor: '#ef4444',
   },
   aiBadgeText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: '#0f172a',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
-  aiProcessingCard: {
-    backgroundColor: '#f5f3ff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd6fe',
-  },
-  aiProcessingText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#7c3aed',
-    marginTop: 12,
-  },
-  aiProcessingSubtext: {
-    fontSize: 12,
-    color: '#8b5cf6',
-    marginTop: 4,
-  },
-  resultRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-  },
-  resultLabel: {
-    fontSize: 13,
-    color: '#64748b',
-    fontWeight: '600',
-  },
-  resultValue: {
-    fontSize: 14,
-    color: '#1e293b',
-    fontWeight: '700',
-    maxWidth: '60%',
-    textAlign: 'right',
-  },
-  docTypeBadge: {
-    backgroundColor: '#dbeafe',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  docTypeBadgeText: {
-    fontSize: 13,
-    color: '#2563eb',
-    fontWeight: '700',
-  },
-  textPreview: {
-    fontSize: 12,
-    color: '#475569',
-    marginTop: 6,
-    padding: 10,
-    backgroundColor: '#f8fafc',
-    borderRadius: 8,
-    lineHeight: 18,
-  },
-  // ═══ Input Mode Selector Styles ═══
   modeSelector: {
     flexDirection: 'row',
     backgroundColor: '#e2e8f0',
-    borderRadius: 12,
+    borderRadius: 4,
     padding: 4,
     marginBottom: 16,
   },
   modeTab: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 2,
     alignItems: 'center',
   },
   modeTabActive: {
     backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
   },
   modeTabText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '800',
     color: '#64748b',
+    letterSpacing: 0.5,
   },
   modeTabTextActive: {
-    color: '#3b82f6',
-    fontWeight: '700',
+    color: '#0f172a',
   },
-  // ═══ Camera & Upload Button Styles ═══
   cameraButton: {
-    backgroundColor: '#10b981',
-    shadowColor: '#10b981',
+    backgroundColor: '#1e293b',
+    borderColor: '#0f172a',
   },
   uploadButton: {
-    backgroundColor: '#8b5cf6',
-    shadowColor: '#8b5cf6',
+    backgroundColor: '#334155',
+    borderColor: '#1e293b',
   },
 });

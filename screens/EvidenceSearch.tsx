@@ -249,19 +249,20 @@ export default function EvidenceSearch() {
     <View style={styles.container}>
       {/* Search Bar */}
       <View style={styles.searchBar}>
-        <Text style={styles.searchIcon}>{'\u{1F50D}'}</Text>
+        <Text style={styles.searchIcon}>{'>'}</Text>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search by FIR no, name, section, text..."
+          placeholder="SEARCH DATABASE..."
           placeholderTextColor="#94a3b8"
           value={searchQuery}
           onChangeText={setSearchQuery}
           onSubmitEditing={handleSearch}
           returnKeyType="search"
+          autoCapitalize="characters"
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => { setSearchQuery(''); performSearch(); }}>
-            <Text style={{ fontSize: 18, color: '#94a3b8' }}>{'\u2715'}</Text>
+            <Text style={{ fontSize: 16, color: '#94a3b8', fontWeight: '800' }}>{'\u2715'}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -273,21 +274,21 @@ export default function EvidenceSearch() {
           onPress={() => setShowFilters(!showFilters)}
         >
           <Text style={[styles.filterToggleBtnText, hasActiveFilters && { color: '#fff' }]}>
-            {'\u{2699}\u{FE0F}'} Filters
-            {hasActiveFilters ? ` (${[activeFilter !== 'ALL' ? getDocLabel(activeFilter) : '', filterYear, filterMonth ? MONTHS[filterMonth - 1] : ''].filter(Boolean).join(', ')})` : ''}
+            FILTERS
+            {hasActiveFilters ? ` [ACTIVE]` : ''}
           </Text>
         </TouchableOpacity>
         {hasActiveFilters && (
           <TouchableOpacity onPress={clearAllFilters} style={styles.clearAllBtn}>
-            <Text style={styles.clearAllBtnText}>{'\u2715'} Clear</Text>
+            <Text style={styles.clearAllBtnText}>[CLEAR]</Text>
           </TouchableOpacity>
         )}
         <View style={{ flex: 1 }} />
         <Text style={styles.resultsCount}>
-          {results.length} result{results.length !== 1 ? 's' : ''}
+          {results.length} RECORD{results.length !== 1 ? 'S' : ''}
         </Text>
         <TouchableOpacity onPress={loadInitialData} style={{ marginLeft: 10 }}>
-          <Text style={styles.refreshBtn}>{'\u21BB'} Refresh</Text>
+          <Text style={styles.refreshBtn}>[RE-SYNC]</Text>
         </TouchableOpacity>
       </View>
 
@@ -295,7 +296,7 @@ export default function EvidenceSearch() {
       {showFilters && (
         <View style={styles.filterPanel}>
           {/* Doc Type */}
-          <Text style={styles.filterSectionLabel}>Document Type</Text>
+          <Text style={styles.filterSectionLabel}>DOCUMENT CLASSIFICATION</Text>
           <View style={styles.filterChipRow}>
             {DOC_TYPE_OPTIONS.map(f => (
               <TouchableOpacity
@@ -304,20 +305,20 @@ export default function EvidenceSearch() {
                 onPress={() => setActiveFilter(f.value)}
               >
                 <Text style={[styles.filterChipText, activeFilter === f.value && styles.filterChipTextActive]}>
-                  {f.icon} {f.label} ({f.count})
+                  {f.label.toUpperCase()} [{f.count}]
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
           {/* Year */}
-          <Text style={[styles.filterSectionLabel, { marginTop: 12 }]}>Year</Text>
+          <Text style={[styles.filterSectionLabel, { marginTop: 12 }]}>TIMEFRAME: YEAR</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <TouchableOpacity
               style={[styles.dateChip, !filterYear && styles.dateChipActive]}
               onPress={() => setFilterYear(null)}
             >
-              <Text style={[styles.dateChipText, !filterYear && styles.dateChipTextActive]}>Any</Text>
+              <Text style={[styles.dateChipText, !filterYear && styles.dateChipTextActive]}>ALL</Text>
             </TouchableOpacity>
             {[2026, 2025, 2024, 2023].map(y => (
               <TouchableOpacity
@@ -331,13 +332,13 @@ export default function EvidenceSearch() {
           </ScrollView>
 
           {/* Month */}
-          <Text style={[styles.filterSectionLabel, { marginTop: 12 }]}>Month</Text>
+          <Text style={[styles.filterSectionLabel, { marginTop: 12 }]}>TIMEFRAME: MONTH</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <TouchableOpacity
               style={[styles.dateChip, !filterMonth && styles.dateChipActive]}
               onPress={() => setFilterMonth(null)}
             >
-              <Text style={[styles.dateChipText, !filterMonth && styles.dateChipTextActive]}>Any</Text>
+              <Text style={[styles.dateChipText, !filterMonth && styles.dateChipTextActive]}>ALL</Text>
             </TouchableOpacity>
             {MONTHS.map((m, i) => (
               <TouchableOpacity
@@ -345,7 +346,7 @@ export default function EvidenceSearch() {
                 style={[styles.dateChip, filterMonth === i + 1 && styles.dateChipActive]}
                 onPress={() => setFilterMonth(i + 1)}
               >
-                <Text style={[styles.dateChipText, filterMonth === i + 1 && styles.dateChipTextActive]}>{m}</Text>
+                <Text style={[styles.dateChipText, filterMonth === i + 1 && styles.dateChipTextActive]}>{m.toUpperCase()}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -355,18 +356,17 @@ export default function EvidenceSearch() {
       {/* Loading */}
       {loading && (
         <View style={styles.centerBox}>
-          <ActivityIndicator size="large" color="#3b82f6" />
-          <Text style={styles.loadingText}>Loading...</Text>
+          <ActivityIndicator size="large" color="#0f172a" />
+          <Text style={styles.loadingText}>QUERYING DATABASE...</Text>
         </View>
       )}
 
       {/* Empty State */}
       {!loading && results.length === 0 && (
         <View style={styles.centerBox}>
-          <Text style={{ fontSize: 56, marginBottom: 12 }}>{'\u{1F4C2}'}</Text>
-          <Text style={styles.emptyTitle}>No Documents Found</Text>
+          <Text style={styles.emptyTitle}>0 RECORDS RETURNED</Text>
           <Text style={styles.emptyText}>
-            {'Scan documents using the Document Scanner.\nAI will process them in the background.'}
+            {'AWAITING NEW DOCUMENT INGESTION.'}
           </Text>
         </View>
       )}
@@ -374,8 +374,8 @@ export default function EvidenceSearch() {
       {/* Document Cards */}
       <ScrollView style={styles.resultsList} showsVerticalScrollIndicator={false}>
         {results.map((item) => {
-          const title = getDisplayTitle(item);
-          const subtitle = getDisplaySubtitle(item);
+          const title = getDisplayTitle(item).toUpperCase();
+          const subtitle = getDisplaySubtitle(item).toUpperCase();
           const keyFields = item.keyFields || {};
           const topKeys = Object.entries(keyFields).slice(0, 3);
 
@@ -396,18 +396,18 @@ export default function EvidenceSearch() {
                   />
                 </View>
               ) : (
-                <View style={[styles.docCardIcon, { backgroundColor: getDocColor(item.docType) + '12' }]}>
-                  <Text style={{ fontSize: 28 }}>{getDocIcon(item.docType)}</Text>
+                <View style={[styles.docCardIcon, { backgroundColor: getDocColor(item.docType) + '12', borderWidth: 1, borderColor: getDocColor(item.docType) }]}>
+                  <Text style={{ fontSize: 18, fontWeight: '800', color: getDocColor(item.docType) }}>DOC</Text>
                 </View>
               )}
               <View style={styles.docCardBody}>
                 <View style={styles.docCardHeader}>
-                  <View style={[styles.typeBadge, { backgroundColor: getDocColor(item.docType) + '18' }]}>
-                    <Text style={[styles.typeBadgeText, { color: getDocColor(item.docType) }]}>
+                  <View style={[styles.typeBadge, { backgroundColor: getDocColor(item.docType), borderWidth: 0 }]}>
+                    <Text style={[styles.typeBadgeText, { color: '#ffffff' }]}>
                       {item.docType.replace('_', ' ')}
                     </Text>
                   </View>
-                  <Text style={styles.docDate}>{formatDate(item.processedAt || item.timestamp)}</Text>
+                  <Text style={styles.docDate}>{formatDate(item.processedAt || item.timestamp).toUpperCase()}</Text>
                 </View>
                 <Text style={styles.docTitle} numberOfLines={2}>{title}</Text>
                 <Text style={styles.docSubtitle} numberOfLines={1}>{subtitle}</Text>
@@ -415,14 +415,14 @@ export default function EvidenceSearch() {
                   <View style={styles.keyFieldsRow}>
                     {topKeys.map(([k, v]) => (
                       <Text key={k} style={styles.keyFieldText} numberOfLines={1}>
-                        {k.replace(/_/g, ' ')}: {v}
+                        {k.replace(/_/g, ' ').toUpperCase()}: {String(v).toUpperCase()}
                       </Text>
                     ))}
                   </View>
                 )}
               </View>
               <View style={styles.docCardArrow}>
-                <Text style={{ fontSize: 18, color: '#94a3b8' }}>{'\u203A'}</Text>
+                <Text style={{ fontSize: 18, color: '#94a3b8', fontWeight: '800' }}>{'>'}</Text>
               </View>
             </TouchableOpacity>
           );
@@ -434,7 +434,7 @@ export default function EvidenceSearch() {
       <Modal
         visible={showDetailModal}
         transparent={true}
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowDetailModal(false)}
       >
         <View style={styles.modalOverlay}>
@@ -444,23 +444,22 @@ export default function EvidenceSearch() {
                 {/* Header */}
                 <View style={styles.modalHeader}>
                   <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <Text style={{ fontSize: 24 }}>{getDocIcon(selectedDoc.docType)}</Text>
-                      <View style={[styles.typeBadge, { backgroundColor: getDocColor(selectedDoc.docType) + '18' }]}>
-                        <Text style={[styles.typeBadgeText, { color: getDocColor(selectedDoc.docType) }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <View style={[styles.typeBadge, { backgroundColor: getDocColor(selectedDoc.docType) }]}>
+                        <Text style={[styles.typeBadgeText, { color: '#ffffff', fontSize: 10 }]}>
                           {selectedDoc.docType.replace('_', ' ')}
                         </Text>
                       </View>
                     </View>
                     <Text style={styles.modalTitle}>
-                      {getDisplayTitle(selectedDoc)}
+                      {getDisplayTitle(selectedDoc).toUpperCase()}
                     </Text>
                     <Text style={styles.modalSubtitle}>
-                      {getDisplaySubtitle(selectedDoc)} {'\u00B7'} {formatTime(selectedDoc.processedAt || selectedDoc.timestamp)}
+                      {getDisplaySubtitle(selectedDoc).toUpperCase()} {'\u00B7'} {formatTime(selectedDoc.processedAt || selectedDoc.timestamp)}
                     </Text>
                   </View>
                   <TouchableOpacity onPress={() => setShowDetailModal(false)} style={styles.closeX}>
-                    <Text style={{ fontSize: 22, color: '#94a3b8' }}>{'\u2715'}</Text>
+                    <Text style={{ fontSize: 16, color: '#475569', fontWeight: '800' }}>{'\u2715'}</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -501,21 +500,21 @@ export default function EvidenceSearch() {
                   {/* FIR Details */}
                   {firDetail && (
                     <View style={styles.detailCard}>
-                      <Text style={styles.detailCardTitle}>{'\u{1F4CB}'} FIR Information</Text>
-                      <DetailField label="FIR Number" value={firDetail.firNo} highlight />
-                      <DetailField label="Date" value={firDetail.date} />
-                      <DetailField label="Police Station" value={firDetail.policeStation} />
-                      <DetailField label="Complainant" value={firDetail.complainant} />
-                      <DetailField label="Accused" value={firDetail.accused} />
+                      <Text style={styles.detailCardTitle}>{'\u{1F4CB}'} FIR INFORMATION</Text>
+                      <DetailField label="FIR NUMBER" value={firDetail.firNo} highlight />
+                      <DetailField label="DATE" value={firDetail.date} />
+                      <DetailField label="POLICE STATION" value={firDetail.policeStation} />
+                      <DetailField label="COMPLAINANT" value={firDetail.complainant} />
+                      <DetailField label="ACCUSED" value={firDetail.accused} />
                       {firDetail.sections.length > 0 && (
-                        <DetailField label="IPC Sections" value={firDetail.sections.join(', ')} />
+                        <DetailField label="IPC SECTIONS" value={firDetail.sections.join(', ')} />
                       )}
                       {firDetail.actsReferenced.length > 0 && (
-                        <DetailField label="Acts Referenced" value={firDetail.actsReferenced.join(', ')} />
+                        <DetailField label="ACTS REFERENCED" value={firDetail.actsReferenced.join(', ')} />
                       )}
                       {firDetail.sectionDescriptions && Object.keys(firDetail.sectionDescriptions).length > 0 && (
                         <View style={{ marginTop: 8 }}>
-                          <Text style={styles.fieldLabel}>Section Details</Text>
+                          <Text style={styles.fieldLabel}>SECTION DETAILS</Text>
                           {Object.entries(firDetail.sectionDescriptions).map(([sec, desc]) => (
                             <Text key={sec} style={styles.sectionDetailText}>
                               {'\u2022'} {sec}: {desc}
@@ -529,25 +528,25 @@ export default function EvidenceSearch() {
                   {/* ID Card Details */}
                   {idCardDetail && (
                     <View style={styles.detailCard}>
-                      <Text style={styles.detailCardTitle}>{'\u{1FAAA}'} ID Card Information</Text>
-                      <DetailField label="Card Type" value={idCardDetail.cardType} highlight />
-                      {idCardDetail.name ? <DetailField label="Name" value={idCardDetail.name} /> : null}
-                      {idCardDetail.idNumber ? <DetailField label="ID Number" value={idCardDetail.idNumber} /> : null}
-                      {idCardDetail.dateOfBirth ? <DetailField label="Date of Birth" value={idCardDetail.dateOfBirth} /> : null}
-                      {idCardDetail.address ? <DetailField label="Address" value={idCardDetail.address} /> : null}
+                      <Text style={styles.detailCardTitle}>{'\u{1FAAA}'} ID CARD INFORMATION</Text>
+                      <DetailField label="CARD TYPE" value={idCardDetail.cardType} highlight />
+                      {idCardDetail.name ? <DetailField label="NAME" value={idCardDetail.name} /> : null}
+                      {idCardDetail.idNumber ? <DetailField label="ID NUMBER" value={idCardDetail.idNumber} /> : null}
+                      {idCardDetail.dateOfBirth ? <DetailField label="DATE OF BIRTH" value={idCardDetail.dateOfBirth} /> : null}
+                      {idCardDetail.address ? <DetailField label="ADDRESS" value={idCardDetail.address} /> : null}
                     </View>
                   )}
 
                   {/* Report Details */}
                   {reportDetail && (
                     <View style={styles.detailCard}>
-                      <Text style={styles.detailCardTitle}>{'\u{1F4DD}'} Report Information</Text>
-                      <DetailField label="Report Type" value={reportDetail.reportType} highlight />
-                      {reportDetail.reportNumber ? <DetailField label="Report No." value={reportDetail.reportNumber} /> : null}
-                      {reportDetail.date ? <DetailField label="Date" value={reportDetail.date} /> : null}
-                      {reportDetail.officer ? <DetailField label="Officer" value={reportDetail.officer} /> : null}
+                      <Text style={styles.detailCardTitle}>{'\u{1F4DD}'} REPORT INFORMATION</Text>
+                      <DetailField label="REPORT TYPE" value={reportDetail.reportType} highlight />
+                      {reportDetail.reportNumber ? <DetailField label="REPORT NO." value={reportDetail.reportNumber} /> : null}
+                      {reportDetail.date ? <DetailField label="DATE" value={reportDetail.date} /> : null}
+                      {reportDetail.officer ? <DetailField label="OFFICER" value={reportDetail.officer} /> : null}
                       {reportDetail.sections.length > 0 && (
-                        <DetailField label="Sections" value={reportDetail.sections.join(', ')} />
+                        <DetailField label="SECTIONS" value={reportDetail.sections.join(', ')} />
                       )}
                     </View>
                   )}
@@ -555,7 +554,7 @@ export default function EvidenceSearch() {
                   {/* Extracted Key Fields (fallback if no typed detail) */}
                   {selectedDoc.keyFields && Object.keys(selectedDoc.keyFields).length > 0 && !firDetail && !idCardDetail && !reportDetail && (
                     <View style={styles.detailCard}>
-                      <Text style={styles.detailCardTitle}>{'\u{1F4CA}'} Extracted Information</Text>
+                      <Text style={styles.detailCardTitle}>{'\u{1F4CA}'} EXTRACTED INFORMATION</Text>
                       {Object.entries(selectedDoc.keyFields).map(([k, v]) => (
                         <DetailField key={k} label={k.replace(/_/g, ' ')} value={v} />
                       ))}
@@ -565,7 +564,7 @@ export default function EvidenceSearch() {
                   {/* Detected Objects */}
                   {selectedDoc.detectedObjects && selectedDoc.detectedObjects.length > 0 && (
                     <View style={styles.detailCard}>
-                      <Text style={styles.detailCardTitle}>{'\u{1F50E}'} Detected Objects</Text>
+                      <Text style={styles.detailCardTitle}>{'\u{1F50E}'} DETECTED OBJECTS</Text>
                       <View style={styles.tagRow}>
                         {selectedDoc.detectedObjects.map((obj, idx) => (
                           <View key={idx} style={styles.tag}>
@@ -579,7 +578,7 @@ export default function EvidenceSearch() {
                   {/* Full OCR Text */}
                   {selectedDoc.ocrText ? (
                     <View style={styles.detailCard}>
-                      <Text style={styles.detailCardTitle}>{'\u{1F4C3}'} Full Document Text</Text>
+                      <Text style={styles.detailCardTitle}>{'\u{1F4C3}'} FULL DOCUMENT TEXT</Text>
                       <ScrollView style={{ maxHeight: 250 }} nestedScrollEnabled>
                         <Text style={styles.ocrFullText} selectable>{selectedDoc.ocrText}</Text>
                       </ScrollView>
@@ -588,21 +587,21 @@ export default function EvidenceSearch() {
 
                   {/* Processing Details */}
                   <View style={[styles.detailCard, { backgroundColor: '#f1f5f9' }]}>
-                    <Text style={[styles.detailCardTitle, { fontSize: 12, color: '#94a3b8' }]}>{'\u{1F527}'} Processing Details</Text>
+                    <Text style={[styles.detailCardTitle, { fontSize: 12, color: '#94a3b8' }]}>{'\u{1F527}'} PROCESSING DETAILS</Text>
                     <View style={styles.techRow}>
-                      <Text style={styles.techLabel}>OCR Confidence</Text>
+                      <Text style={styles.techLabel}>OCR CONFIDENCE</Text>
                       <Text style={styles.techValue}>{((selectedDoc.ocrConfidence || 0) * 100).toFixed(0)}%</Text>
                     </View>
                     <View style={styles.techRow}>
-                      <Text style={styles.techLabel}>Classification</Text>
+                      <Text style={styles.techLabel}>CLASSIFICATION</Text>
                       <Text style={styles.techValue}>{((selectedDoc.classificationConfidence || 0) * 100).toFixed(0)}%</Text>
                     </View>
                     <View style={styles.techRow}>
-                      <Text style={styles.techLabel}>Fields Found</Text>
+                      <Text style={styles.techLabel}>FIELDS FOUND</Text>
                       <Text style={styles.techValue}>{selectedDoc.fieldsExtracted || 0}</Text>
                     </View>
                     <View style={styles.techRow}>
-                      <Text style={styles.techLabel}>Document ID</Text>
+                      <Text style={styles.techLabel}>DOCUMENT ID</Text>
                       <Text style={[styles.techValue, { fontSize: 10 }]}>{selectedDoc.id ? selectedDoc.id.substring(0, 12) + '...' : 'N/A'}</Text>
                     </View>
                   </View>
@@ -610,11 +609,11 @@ export default function EvidenceSearch() {
 
                 {/* Actions */}
                 <View style={styles.modalActions}>
-                  <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(selectedDoc)}>
-                    <Text style={styles.deleteBtnText}>{'\u{1F5D1}\u{FE0F}'} Delete</Text>
+                  <TouchableOpacity style={[styles.btn, styles.btnDanger]} onPress={() => handleDelete(selectedDoc)}>
+                    <Text style={styles.btnDangerText}>[PURGE RECORD]</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.closeBtn} onPress={() => setShowDetailModal(false)}>
-                    <Text style={styles.closeBtnText}>Close</Text>
+                  <TouchableOpacity style={[styles.btn, styles.btnSecondary]} onPress={() => setShowDetailModal(false)}>
+                    <Text style={styles.btnSecondaryText}>[DISMISS]</Text>
                   </TouchableOpacity>
                 </View>
               </>
@@ -643,170 +642,171 @@ const dfStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: '#e2e8f0',
   },
   label: {
-    fontSize: 13,
+    fontSize: 10,
     color: '#64748b',
-    fontWeight: '600',
+    fontWeight: '800',
     flex: 1,
-    textTransform: 'capitalize',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   value: {
-    fontSize: 13,
-    color: '#1e293b',
-    fontWeight: '600',
+    fontSize: 11,
+    color: '#0f172a',
+    fontWeight: '700',
     flex: 1.5,
     textAlign: 'right',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    textTransform: 'uppercase',
   },
   highlighted: {
-    color: '#2563eb',
-    fontWeight: '700',
-    fontSize: 15,
+    color: '#0f172a',
+    fontWeight: '800',
+    fontSize: 12,
   },
 });
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc', padding: 20 },
+  container: { flex: 1, backgroundColor: '#f1f5f9', padding: 18 },
   searchBar: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
-    borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 12,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff',
+    borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 4, 
+    paddingHorizontal: 16, paddingVertical: 12, marginBottom: 12,
   },
-  searchIcon: { fontSize: 18, marginRight: 10 },
-  searchInput: { flex: 1, fontSize: 15, color: '#1e293b' },
+  searchIcon: { fontSize: 16, marginRight: 10, color: '#475569', fontWeight: '800', fontFamily: 'monospace' },
+  searchInput: { flex: 1, fontSize: 12, color: '#0f172a', fontWeight: '800', fontFamily: 'monospace' },
 
   filterToggleRow: {
     flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 10,
   },
   filterToggleBtn: {
-    backgroundColor: '#fff', paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 20, borderWidth: 1, borderColor: '#e2e8f0',
+    backgroundColor: '#ffffff', paddingHorizontal: 12, paddingVertical: 8,
+    borderRadius: 4, borderWidth: 1, borderColor: '#cbd5e1',
   },
-  filterToggleBtnActive: { backgroundColor: '#3b82f6', borderColor: '#3b82f6' },
-  filterToggleBtnText: { fontSize: 12, color: '#475569', fontWeight: '600' },
-  clearAllBtn: { paddingHorizontal: 10, paddingVertical: 6 },
-  clearAllBtnText: { fontSize: 12, color: '#ef4444', fontWeight: '600' },
-  resultsCount: { fontSize: 13, color: '#64748b', fontWeight: '600' },
-  refreshBtn: { fontSize: 13, color: '#3b82f6', fontWeight: '700' },
+  filterToggleBtnActive: { backgroundColor: '#1e293b', borderColor: '#0f172a' },
+  filterToggleBtnText: { fontSize: 10, color: '#475569', fontWeight: '800', letterSpacing: 1, fontFamily: 'monospace' },
+  clearAllBtn: { paddingHorizontal: 10, paddingVertical: 8 },
+  clearAllBtnText: { fontSize: 10, color: '#ef4444', fontWeight: '800', letterSpacing: 1, fontFamily: 'monospace' },
+  resultsCount: { fontSize: 10, color: '#475569', fontWeight: '800', letterSpacing: 1, fontFamily: 'monospace' },
+  refreshBtn: { fontSize: 10, color: '#0f172a', fontWeight: '800', letterSpacing: 1, fontFamily: 'monospace' },
 
   filterPanel: {
-    backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 12,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
+    backgroundColor: '#ffffff', borderRadius: 4, padding: 16, marginBottom: 12,
+    borderWidth: 1, borderColor: '#cbd5e1',
   },
   filterSectionLabel: {
-    fontSize: 11, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase',
-    letterSpacing: 0.5, marginBottom: 8,
+    fontSize: 10, fontWeight: '800', color: '#64748b', textTransform: 'uppercase',
+    letterSpacing: 1, marginBottom: 8,
   },
   filterChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   filterChip: {
-    backgroundColor: '#f1f5f9', paddingHorizontal: 12, paddingVertical: 7,
-    borderRadius: 16, borderWidth: 1, borderColor: '#e2e8f0',
+    backgroundColor: '#f1f5f9', paddingHorizontal: 12, paddingVertical: 8,
+    borderRadius: 4, borderWidth: 1, borderColor: '#cbd5e1',
   },
-  filterChipActive: { backgroundColor: '#3b82f6', borderColor: '#3b82f6' },
-  filterChipText: { fontSize: 12, color: '#475569', fontWeight: '600' },
-  filterChipTextActive: { color: '#fff' },
+  filterChipActive: { backgroundColor: '#1e293b', borderColor: '#0f172a' },
+  filterChipText: { fontSize: 10, color: '#475569', fontWeight: '800', letterSpacing: 1, fontFamily: 'monospace' },
+  filterChipTextActive: { color: '#f8fafc' },
   dateChip: {
-    backgroundColor: '#f1f5f9', paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 14, marginRight: 6,
+    backgroundColor: '#f1f5f9', paddingHorizontal: 12, paddingVertical: 8,
+    borderRadius: 4, marginRight: 6, borderWidth: 1, borderColor: '#cbd5e1',
   },
-  dateChipActive: { backgroundColor: '#3b82f6' },
-  dateChipText: { fontSize: 11, color: '#64748b', fontWeight: '600' },
-  dateChipTextActive: { color: '#fff' },
+  dateChipActive: { backgroundColor: '#1e293b', borderColor: '#0f172a' },
+  dateChipText: { fontSize: 10, color: '#475569', fontWeight: '800', letterSpacing: 1, fontFamily: 'monospace' },
+  dateChipTextActive: { color: '#f8fafc' },
 
   centerBox: { padding: 40, alignItems: 'center' },
-  loadingText: { marginTop: 12, fontSize: 14, color: '#64748b' },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b', marginBottom: 8 },
-  emptyText: { fontSize: 14, color: '#94a3b8', textAlign: 'center', lineHeight: 22 },
+  loadingText: { marginTop: 16, fontSize: 11, color: '#475569', fontWeight: '800', letterSpacing: 2, fontFamily: 'monospace' },
+  emptyTitle: { fontSize: 13, fontWeight: '800', color: '#0f172a', marginBottom: 8, letterSpacing: 1, fontFamily: 'monospace' },
+  emptyText: { fontSize: 11, color: '#64748b', textAlign: 'center', lineHeight: 20, fontFamily: 'monospace', fontWeight: '700' },
   resultsList: { flex: 1 },
 
   docCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
-    borderRadius: 14, padding: 14, marginBottom: 10,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04, shadowRadius: 6, elevation: 1,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff',
+    borderRadius: 4, padding: 14, marginBottom: 10,
+    borderWidth: 1, borderColor: '#cbd5e1',
   },
   docCardThumb: {
-    width: 56, height: 56, borderRadius: 10, overflow: 'hidden',
-    marginRight: 14, backgroundColor: '#f1f5f9',
+    width: 60, height: 60, borderRadius: 2, overflow: 'hidden',
+    marginRight: 14, backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0',
   },
-  thumbImage: { width: 56, height: 56 },
+  thumbImage: { width: '100%', height: '100%' },
   docCardIcon: {
-    width: 56, height: 56, borderRadius: 10,
+    width: 60, height: 60, borderRadius: 2,
     justifyContent: 'center', alignItems: 'center', marginRight: 14,
+    backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0',
   },
   docCardBody: { flex: 1 },
-  docCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  typeBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  typeBadgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
-  docDate: { fontSize: 11, color: '#94a3b8' },
-  docTitle: { fontSize: 14, fontWeight: '700', color: '#1e293b', marginBottom: 2 },
-  docSubtitle: { fontSize: 12, color: '#64748b', marginBottom: 4 },
-  keyFieldsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
-  keyFieldText: { fontSize: 11, color: '#94a3b8', fontWeight: '500' },
-  docCardArrow: { paddingLeft: 8, justifyContent: 'center' },
+  docCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  typeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 2 },
+  typeBadgeText: { fontSize: 9, fontWeight: '800', letterSpacing: 1.5, color: '#fff', fontFamily: 'monospace' },
+  docDate: { fontSize: 9, color: '#64748b', fontWeight: '800', fontFamily: 'monospace', letterSpacing: 1 },
+  docTitle: { fontSize: 12, fontWeight: '800', color: '#0f172a', marginBottom: 4, letterSpacing: 0.5 },
+  docSubtitle: { fontSize: 10, color: '#475569', marginBottom: 6, fontWeight: '700', fontFamily: 'monospace' },
+  keyFieldsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+  keyFieldText: { fontSize: 9, color: '#475569', fontWeight: '800', letterSpacing: 0.5, backgroundColor: '#f1f5f9', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 2, borderWidth: 1, borderColor: '#e2e8f0', fontFamily: 'monospace' },
+  docCardArrow: { paddingLeft: 12, justifyContent: 'center' },
 
   modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
+    flex: 1, backgroundColor: 'rgba(15,23,42,0.85)',
     justifyContent: 'center', alignItems: 'center', padding: 16,
   },
   modalContent: {
-    backgroundColor: '#fff', borderRadius: 18, padding: 20,
-    width: '100%', maxWidth: 540,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15, shadowRadius: 16, elevation: 8,
+    backgroundColor: '#ffffff', borderRadius: 4, padding: 20,
+    width: '100%', maxWidth: 540, borderWidth: 1, borderColor: '#cbd5e1',
   },
   modalHeader: {
-    flexDirection: 'row', marginBottom: 16,
-    borderBottomWidth: 1, borderBottomColor: '#f1f5f9', paddingBottom: 14,
+    flexDirection: 'row', marginBottom: 16, alignItems: 'flex-start',
+    borderBottomWidth: 1, borderBottomColor: '#e2e8f0', paddingBottom: 14,
   },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b', marginTop: 4 },
-  modalSubtitle: { fontSize: 13, color: '#64748b', marginTop: 2 },
+  modalTitle: { fontSize: 14, fontWeight: '800', color: '#0f172a', letterSpacing: 1, lineHeight: 20 },
+  modalSubtitle: { fontSize: 10, color: '#64748b', marginTop: 6, fontWeight: '800', fontFamily: 'monospace', letterSpacing: 1 },
   closeX: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center',
+    width: 32, height: 32, borderRadius: 4,
+    backgroundColor: '#f8fafc', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: '#cbd5e1',
   },
-  detailCard: { backgroundColor: '#f8fafc', borderRadius: 12, padding: 16, marginBottom: 14 },
-  detailCardTitle: { fontSize: 14, fontWeight: '700', color: '#1e293b', marginBottom: 10 },
-  fieldLabel: { fontSize: 12, fontWeight: '600', color: '#64748b', marginBottom: 6 },
-  sectionDetailText: { fontSize: 12, color: '#475569', lineHeight: 20, paddingLeft: 4 },
-  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tag: { backgroundColor: '#dbeafe', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  tagText: { fontSize: 12, color: '#3b82f6', fontWeight: '600' },
+  detailCard: { 
+    backgroundColor: '#ffffff', borderRadius: 4, padding: 16, marginBottom: 14,
+    borderWidth: 1, borderColor: '#cbd5e1',
+  },
+  detailCardTitle: { fontSize: 13, fontWeight: '800', color: '#0f172a', marginBottom: 10, letterSpacing: 0.5 },
+  fieldLabel: { fontSize: 11, fontWeight: '700', color: '#64748b', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionDetailText: { fontSize: 12, color: '#475569', lineHeight: 20, paddingLeft: 4, fontWeight: '500' },
+  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  tag: { backgroundColor: '#e2e8f0', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: '#cbd5e1' },
+  tagText: { fontSize: 10, color: '#475569', fontWeight: '700', letterSpacing: 0.5 },
   ocrFullText: {
-    fontSize: 12, color: '#475569', lineHeight: 20, padding: 12,
-    backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#e2e8f0',
+    fontSize: 11, color: '#475569', lineHeight: 20, padding: 12,
+    backgroundColor: '#ffffff', borderRadius: 4, borderWidth: 1, borderColor: '#e2e8f0', fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   docFullImage: {
-    width: '100%', height: 350, borderRadius: 10, marginTop: 8,
-    backgroundColor: '#f1f5f9',
+    width: '100%', height: 350, borderRadius: 4, marginTop: 8,
+    backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0',
   },
   docPreviewImage: {
-    width: '100%', height: 120, borderRadius: 10,
-    backgroundColor: '#f1f5f9',
+    width: '100%', height: 120, borderRadius: 4,
+    backgroundColor: '#f1f5f9', borderWidth: 1, borderColor: '#e2e8f0',
   },
-  viewImageBtn: { position: 'relative', borderRadius: 10, overflow: 'hidden', marginTop: 8 },
+  viewImageBtn: { position: 'relative', borderRadius: 4, overflow: 'hidden', marginTop: 8 },
   viewImageOverlay: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)', paddingVertical: 8, alignItems: 'center',
+    backgroundColor: 'rgba(15,23,42,0.85)', paddingVertical: 8, alignItems: 'center',
   },
-  viewImageText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  viewImageText: { color: '#f8fafc', fontSize: 11, fontWeight: '700', letterSpacing: 1 },
   techRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-  techLabel: { fontSize: 11, color: '#94a3b8' },
-  techValue: { fontSize: 11, color: '#94a3b8', fontWeight: '600' },
+  techLabel: { fontSize: 10, color: '#64748b', fontWeight: '600' },
+  techValue: { fontSize: 10, color: '#475569', fontWeight: '800', fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
   modalActions: {
     flexDirection: 'row', gap: 12, marginTop: 14,
-    paddingTop: 14, borderTopWidth: 1, borderTopColor: '#f1f5f9',
+    paddingTop: 14, borderTopWidth: 2, borderTopColor: '#f1f5f9',
   },
-  deleteBtn: {
-    flex: 1, backgroundColor: '#fef2f2', padding: 14, borderRadius: 10,
-    alignItems: 'center', borderWidth: 1, borderColor: '#fecaca',
-  },
-  deleteBtnText: { fontSize: 14, color: '#ef4444', fontWeight: '600' },
-  closeBtn: { flex: 2, backgroundColor: '#3b82f6', padding: 14, borderRadius: 10, alignItems: 'center' },
-  closeBtnText: { fontSize: 14, color: '#fff', fontWeight: '700' },
+  btn: { flex: 1, paddingVertical: 14, borderRadius: 4, alignItems: 'center', borderWidth: 1 },
+  btnSecondary: { backgroundColor: '#f1f5f9', borderColor: '#cbd5e1' },
+  btnSecondaryText: { color: '#475569', fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
+  btnDanger: { backgroundColor: '#fef2f2', borderColor: '#fca5a5' },
+  btnDangerText: { color: '#b91c1c', fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
 });

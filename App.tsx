@@ -7,7 +7,8 @@ import {
   Animated, 
   Dimensions, 
   Pressable,
-  PanResponder
+  PanResponder,
+  ScrollView
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
@@ -17,10 +18,8 @@ import Header from './components/Header';
 
 // Screens
 import LiveStream from './screens/LiveStream';
-import EvidenceVault from './screens/EvidenceVault';
 import DocumentScanner from './screens/DocumentScanner';
 import EvidenceSearch from './screens/EvidenceSearch';
-import DeviceStatus from './screens/DeviceStatus';
 import AccessLogs from './screens/AccessLogs';
 import UserCaseManagement from './screens/UserCaseManagement';
 import AnalyticsReports from './screens/AnalyticsReports';
@@ -30,30 +29,24 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SIDEBAR_WIDTH = 280;
 
 type ScreenId =
-  | 'liveStream'
-  | 'evidenceVault'
-  | 'documentScanner'
   | 'evidenceSearch'
-  | 'deviceStatus'
-  | 'accessLogs'
-  | 'userCase'
+  | 'documentScanner'
+  | 'liveStream'
   | 'analytics'
+  | 'userLogs'
   | 'settings';
 
 const screenTitles: Record<ScreenId, string> = {
-  liveStream: 'Live Stream',
-  evidenceVault: 'Evidence Vault',
-  documentScanner: 'Document Scanner',
   evidenceSearch: 'Evidence Search',
-  deviceStatus: 'Device Status',
-  accessLogs: 'Access Logs / Security Events',
-  userCase: 'User & Case Management',
+  documentScanner: 'Document Scanner',
+  liveStream: 'Live Stream',
   analytics: 'Analytics & Reports',
+  userLogs: 'User Logs & Management',
   settings: 'Settings',
 };
 
 export default function App() {
-  const [activeScreen, setActiveScreen] = useState<ScreenId>('liveStream');
+  const [activeScreen, setActiveScreen] = useState<ScreenId>('evidenceSearch');
   const [sidebarVisible, setSidebarVisible] = useState(false);
   
   const translateX = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
@@ -62,26 +55,25 @@ export default function App() {
 
   const renderScreen = () => {
     switch (activeScreen) {
-      case 'liveStream':
-        return <LiveStream />;
-      case 'evidenceVault':
-        return <EvidenceVault />;
-      case 'documentScanner':
-        return <DocumentScanner />;
       case 'evidenceSearch':
         return <EvidenceSearch />;
-      case 'deviceStatus':
-        return <DeviceStatus />;
-      case 'accessLogs':
-        return <AccessLogs />;
-      case 'userCase':
-        return <UserCaseManagement />;
+      case 'documentScanner':
+        return <DocumentScanner />;
+      case 'liveStream':
+        return <LiveStream />;
       case 'analytics':
         return <AnalyticsReports />;
+      case 'userLogs':
+        return (
+          <ScrollView style={{ flex: 1 }}>
+             <UserCaseManagement />
+             <AccessLogs />
+          </ScrollView>
+        );
       case 'settings':
         return <Settings />;
       default:
-        return <LiveStream />;
+        return <EvidenceSearch />;
     }
   };
 

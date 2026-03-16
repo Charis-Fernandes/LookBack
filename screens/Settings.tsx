@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, TextInput, Platform } from 'react-native';
 
 export default function Settings() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -9,54 +9,56 @@ export default function Settings() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Profile Section */}
+      {/* Save Button */}
+      <TouchableOpacity style={styles.topSaveBtn}>
+        <Text style={styles.topSaveBtnText}>SAVE CONFIGURATION</Text>
+      </TouchableOpacity>
+
+      {/* Account Info */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>👤 Profile Settings</Text>
+        <Text style={styles.sectionTitle}>SYSTEM ADMINISTRATOR</Text>
         <View style={styles.settingsCard}>
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Full Name</Text>
+            <Text style={styles.inputLabel}>OPERATOR NAME</Text>
             <TextInput
               style={styles.input}
-              placeholder="Admin User"
+              placeholder="ADMIN USER"
               placeholderTextColor="#94a3b8"
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Email</Text>
+            <Text style={styles.inputLabel}>CONTACT EMAIL</Text>
             <TextInput
               style={styles.input}
-              placeholder="admin@lookback.com"
+              placeholder="admin@lookback.sys"
               placeholderTextColor="#94a3b8"
               keyboardType="email-address"
             />
           </View>
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Role</Text>
+            <Text style={styles.inputLabel}>ACCESS LEVEL</Text>
             <View style={styles.roleTag}>
-              <Text style={styles.roleTagText}>Administrator</Text>
+              <Text style={styles.roleTagText}>LEVEL-5 (ADMIN)</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.saveButton}>
-            <Text style={styles.saveButtonText}>💾 Save Changes</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
       {/* Blynk IoT Integration Status */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🌐 Blynk IoT Integration</Text>
+        <Text style={styles.sectionTitle}>EXTERNAL INTEGRATION</Text>
         <View style={styles.settingsCard}>
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Status</Text>
+            <Text style={styles.inputLabel}>BLYNK IOT NODE</Text>
             <View style={styles.statusRow}>
               <View style={styles.statusDotGreen} />
-              <Text style={styles.statusText}>Connected to Blynk Cloud</Text>
+              <Text style={styles.statusText}>CONNECTED</Text>
             </View>
             <Text style={styles.settingDescription}>
-              💡 Template: lookback (TMPL31Se8tinV)
+              TMPL: lookback (TMPL31Se8tinV)
             </Text>
             <Text style={styles.settingDescription}>
-              🔗 Remote monitoring and control enabled
+              UPLINK ACTIVE
             </Text>
           </View>
         </View>
@@ -64,31 +66,31 @@ export default function Settings() {
 
       {/* Notifications */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🔔 Notifications</Text>
+        <Text style={styles.sectionTitle}>NODE ALERTS</Text>
         <View style={styles.settingsCard}>
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Push Notifications</Text>
-              <Text style={styles.settingDescription}>Receive alerts for new evidence</Text>
+              <Text style={styles.settingLabel}>SYSTEM PUSH ALERTS</Text>
+              <Text style={styles.settingDescription}>CRITICAL EVENT NOTIFICATIONS</Text>
             </View>
             <Switch
               value={notificationsEnabled}
               onValueChange={setNotificationsEnabled}
-              trackColor={{ false: '#e2e8f0', true: '#93c5fd' }}
-              thumbColor={notificationsEnabled ? '#3b82f6' : '#f1f5f9'}
+              trackColor={{ false: '#e2e8f0', true: '#1e293b' }}
+              thumbColor={'#f8fafc'}
             />
           </View>
           <View style={styles.divider} />
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Email Notifications</Text>
-              <Text style={styles.settingDescription}>Daily summary reports</Text>
+              <Text style={styles.settingLabel}>REPORT DIGEST</Text>
+              <Text style={styles.settingDescription}>END-OF-SHIFT SUMMARY</Text>
             </View>
             <Switch
               value={true}
               onValueChange={() => {}}
-              trackColor={{ false: '#e2e8f0', true: '#93c5fd' }}
-              thumbColor={'#3b82f6'}
+              trackColor={{ false: '#e2e8f0', true: '#1e293b' }}
+              thumbColor={'#f8fafc'}
             />
           </View>
         </View>
@@ -96,60 +98,60 @@ export default function Settings() {
 
       {/* Security */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🔒 Security</Text>
+        <Text style={styles.sectionTitle}>ACCESS CONTROL</Text>
         <View style={styles.settingsCard}>
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Biometric Authentication</Text>
-              <Text style={styles.settingDescription}>Use fingerprint or Face ID</Text>
+              <Text style={styles.settingLabel}>BIOMETRIC LOCK</Text>
+              <Text style={styles.settingDescription}>REQUIRE HARDWARE AUTH</Text>
             </View>
             <Switch
               value={biometricAuth}
               onValueChange={setBiometricAuth}
-              trackColor={{ false: '#e2e8f0', true: '#93c5fd' }}
-              thumbColor={biometricAuth ? '#3b82f6' : '#f1f5f9'}
+              trackColor={{ false: '#e2e8f0', true: '#1e293b' }}
+              thumbColor={'#f8fafc'}
             />
           </View>
           <View style={styles.divider} />
           <TouchableOpacity style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Change Password</Text>
-              <Text style={styles.settingDescription}>Last changed 45 days ago</Text>
+              <Text style={styles.settingLabel}>UPDATE PASSPHRASE</Text>
+              <Text style={styles.settingDescription}>LAST ROTATED: 45 DAYS AGO</Text>
             </View>
-            <Text style={styles.arrow}>→</Text>
+            <Text style={styles.arrow}>{'>'}</Text>
           </TouchableOpacity>
           <View style={styles.divider} />
           <TouchableOpacity style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Two-Factor Authentication</Text>
-              <Text style={styles.settingDescription}>Enabled</Text>
+              <Text style={styles.settingLabel}>MULTI-FACTOR AUTH</Text>
+              <Text style={styles.settingDescription}>ENFORCED</Text>
             </View>
-            <Text style={styles.arrow}>→</Text>
+            <Text style={styles.arrow}>{'>'}</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Storage & Backup */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>💾 Storage & Backup</Text>
+        <Text style={styles.sectionTitle}>DATA RETENTION</Text>
         <View style={styles.settingsCard}>
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Auto Backup</Text>
-              <Text style={styles.settingDescription}>Backup data daily at 2:00 AM</Text>
+              <Text style={styles.settingLabel}>AUTO ARCHIVE</Text>
+              <Text style={styles.settingDescription}>SYNC AT 0200 HRS</Text>
             </View>
             <Switch
               value={autoBackup}
               onValueChange={setAutoBackup}
-              trackColor={{ false: '#e2e8f0', true: '#93c5fd' }}
-              thumbColor={autoBackup ? '#3b82f6' : '#f1f5f9'}
+              trackColor={{ false: '#e2e8f0', true: '#1e293b' }}
+              thumbColor={'#f8fafc'}
             />
           </View>
           <View style={styles.divider} />
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Storage Used</Text>
-              <Text style={styles.settingDescription}>8.4 GB / 50 GB</Text>
+              <Text style={styles.settingLabel}>LOCAL CAPACITY</Text>
+              <Text style={styles.settingDescription}>8.4 GB / 50 GB ALLOCATED</Text>
             </View>
             <View style={styles.storageBar}>
               <View style={styles.storageFill} />
@@ -160,18 +162,18 @@ export default function Settings() {
 
       {/* Appearance */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🎨 Appearance</Text>
+        <Text style={styles.sectionTitle}>INTERFACE PROTOCOL</Text>
         <View style={styles.settingsCard}>
           <View style={styles.settingRow}>
             <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Dark Mode</Text>
-              <Text style={styles.settingDescription}>Currently using light theme</Text>
+              <Text style={styles.settingLabel}>NIGHT OPERATIONS MODE</Text>
+              <Text style={styles.settingDescription}>HIGH CONTRAST THEME</Text>
             </View>
             <Switch
               value={darkMode}
               onValueChange={setDarkMode}
-              trackColor={{ false: '#e2e8f0', true: '#93c5fd' }}
-              thumbColor={darkMode ? '#3b82f6' : '#f1f5f9'}
+              trackColor={{ false: '#e2e8f0', true: '#1e293b' }}
+              thumbColor={'#f8fafc'}
             />
           </View>
         </View>
@@ -179,42 +181,38 @@ export default function Settings() {
 
       {/* About */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>ℹ️ About</Text>
+        <Text style={styles.sectionTitle}>SYSTEM DIAGNOSTICS</Text>
         <View style={styles.settingsCard}>
           <View style={styles.aboutRow}>
-            <Text style={styles.aboutLabel}>Version</Text>
-            <Text style={styles.aboutValue}>1.0.0</Text>
+            <Text style={styles.aboutLabel}>FIRMWARE</Text>
+            <Text style={styles.aboutValue}>v1.4.2</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.aboutRow}>
-            <Text style={styles.aboutLabel}>Build</Text>
-            <Text style={styles.aboutValue}>2025.10.15</Text>
+            <Text style={styles.aboutLabel}>BUILD HASH</Text>
+            <Text style={styles.aboutValue}>LK102025.10.15</Text>
           </View>
           <View style={styles.divider} />
           <TouchableOpacity style={styles.aboutRow}>
-            <Text style={styles.aboutLabel}>Terms of Service</Text>
-            <Text style={styles.arrow}>→</Text>
-          </TouchableOpacity>
-          <View style={styles.divider} />
-          <TouchableOpacity style={styles.aboutRow}>
-            <Text style={styles.aboutLabel}>Privacy Policy</Text>
-            <Text style={styles.arrow}>→</Text>
+            <Text style={styles.aboutLabel}>OPERATING PROTOCOLS</Text>
+            <Text style={styles.arrow}>{'>'}</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Danger Zone */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>⚠️ Danger Zone</Text>
+        <Text style={styles.sectionTitle}>RESTRICTED OPERATIONS</Text>
         <View style={styles.settingsCard}>
-          <TouchableOpacity style={styles.dangerButton}>
-            <Text style={styles.dangerButtonText}>🚪 Logout</Text>
+          <TouchableOpacity style={[styles.dangerButton, { backgroundColor: '#f1f5f9', borderColor: '#cbd5e1' }]}>
+            <Text style={[styles.dangerButtonText, { color: '#0f172a' }]}>TERMINATE SESSION</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.dangerButton, { backgroundColor: '#fee2e2', marginTop: 10 }]}>
-            <Text style={[styles.dangerButtonText, { color: '#dc2626' }]}>🗑️ Clear All Data</Text>
+          <TouchableOpacity style={[styles.dangerButton, { backgroundColor: '#fef2f2', borderColor: '#fca5a5', marginTop: 10 }]}>
+            <Text style={[styles.dangerButtonText, { color: '#b91c1c' }]}>WIPE LOCAL CACHE</Text>
           </TouchableOpacity>
         </View>
       </View>
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
@@ -222,69 +220,72 @@ export default function Settings() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
-    padding: 24,
+    backgroundColor: '#f1f5f9',
+    padding: 18,
+  },
+  topSaveBtn: {
+    backgroundColor: '#0f172a',
+    paddingVertical: 12,
+    borderRadius: 4,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  topSaveBtnText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 12,
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#64748b',
+    marginBottom: 8,
+    letterSpacing: 1,
   },
   settingsCard: {
     backgroundColor: '#ffffff',
-    borderRadius: 12,
+    borderRadius: 4,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   inputGroup: {
     marginBottom: 16,
   },
   inputLabel: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '700',
     color: '#475569',
-    marginBottom: 8,
+    marginBottom: 6,
+    letterSpacing: 0.5,
   },
   input: {
     backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 8,
+    borderColor: '#cbd5e1',
+    borderRadius: 4,
     padding: 12,
-    fontSize: 14,
-    color: '#1e293b',
+    fontSize: 12,
+    color: '#0f172a',
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   roleTag: {
-    backgroundColor: '#dbeafe',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    backgroundColor: '#1e293b',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 4,
     alignSelf: 'flex-start',
   },
   roleTagText: {
-    fontSize: 13,
-    color: '#3b82f6',
-    fontWeight: '600',
-  },
-  saveButton: {
-    backgroundColor: '#3b82f6',
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  saveButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 10,
+    color: '#f8fafc',
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   settingRow: {
     flexDirection: 'row',
@@ -297,34 +298,39 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   settingLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 3,
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#0f172a',
+    marginBottom: 4,
+    letterSpacing: 0.5,
   },
   settingDescription: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#64748b',
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
   divider: {
     height: 1,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#e2e8f0',
   },
   arrow: {
-    fontSize: 18,
+    fontSize: 14,
     color: '#94a3b8',
+    fontWeight: '800',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   storageBar: {
     width: 100,
-    height: 8,
+    height: 6,
     backgroundColor: '#e2e8f0',
-    borderRadius: 4,
+    borderRadius: 2,
     overflow: 'hidden',
   },
   storageFill: {
     width: '17%',
     height: '100%',
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#0f172a',
   },
   aboutRow: {
     flexDirection: 'row',
@@ -333,42 +339,45 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   aboutLabel: {
-    fontSize: 14,
+    fontSize: 11,
     color: '#475569',
-    fontWeight: '500',
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   aboutValue: {
-    fontSize: 14,
-    color: '#1e293b',
-    fontWeight: '600',
+    fontSize: 11,
+    color: '#0f172a',
+    fontWeight: '800',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   dangerButton: {
-    backgroundColor: '#fef3c7',
-    padding: 14,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 4,
     alignItems: 'center',
+    borderWidth: 1,
   },
   dangerButtonText: {
-    color: '#d97706',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 12,
+    marginTop: 4,
+    marginBottom: 6,
   },
   statusDotGreen: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: '#10b981',
-    marginRight: 8,
+    marginRight: 6,
   },
   statusText: {
-    fontSize: 14,
-    color: '#1e293b',
-    fontWeight: '500',
+    fontSize: 11,
+    color: '#0f172a',
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
 });

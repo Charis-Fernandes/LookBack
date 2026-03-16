@@ -22,15 +22,15 @@ export default function Header({ title, onMenuPress }: HeaderProps) {
         )}
 
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>LookBack</Text>
-          <Text style={styles.subtitle}>{title}</Text>
+          <Text style={styles.title}>LOOKBACK</Text>
+          <Text style={styles.subtitle}>{title.toUpperCase()}</Text>
         </View>
 
         <View style={styles.rightSection}>
           <TouchableOpacity style={styles.notificationButton}>
-            <Text style={styles.notificationIcon}></Text>
+            <Text style={styles.notificationIcon}>🔔</Text>
             <View style={styles.badge}>
-              <Text style={styles.badgeText}></Text>
+              <Text style={styles.badgeText}>3</Text>
             </View>
           </TouchableOpacity>
 
@@ -39,8 +39,8 @@ export default function Header({ title, onMenuPress }: HeaderProps) {
               <Text style={styles.avatarText}>AD</Text>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>Admin User</Text>
-              <Text style={styles.profileRole}>Administrator</Text>
+              <Text style={styles.profileName}>ADMIN_01</Text>
+              <Text style={styles.profileRole}>EVIDENCE.SYS</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -51,14 +51,9 @@ export default function Header({ title, onMenuPress }: HeaderProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#0f172a',
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderBottomColor: '#1e293b',
   },
   content: {
     flexDirection: 'row',
@@ -71,97 +66,110 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 2,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#f8fafc',
+    marginBottom: 4,
+    letterSpacing: 2,
   },
   subtitle: {
-    fontSize: 13,
-    color: '#64748b',
-    fontWeight: '500',
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   rightSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 20,
   },
   notificationButton: {
     position: 'relative',
     padding: 8,
+    backgroundColor: '#1e293b',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   notificationIcon: {
-    fontSize: 22,
+    fontSize: 14,
   },
   badge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: '#ffffffff',
-    borderRadius: 10,
-    minWidth: 18,
-    height: 18,
+    top: -4,
+    right: -4,
+    backgroundColor: '#ef4444',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 4,
   },
   badgeText: {
     color: '#ffffff',
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 9,
+    fontWeight: '800',
   },
   profileButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
-    paddingVertical: 8,
+    backgroundColor: '#1e293b',
+    paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 10,
+    borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#334155',
   },
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#3b82f6',
+    width: 28,
+    height: 28,
+    borderRadius: 4,
+    backgroundColor: '#334155',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 12,
   },
   avatarText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '700',
+    color: '#f8fafc',
+    fontSize: 11,
+    fontWeight: '800',
   },
   profileInfo: {
     marginRight: 4,
   },
   profileName: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1e293b',
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#f8fafc',
     marginBottom: 2,
+    letterSpacing: 0.5,
   },
   profileRole: {
-    fontSize: 11,
-    color: '#64748b',
+    fontSize: 9,
+    color: '#94a3b8',
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   menuButton: {
     padding: 8,
-    marginRight: 12,
+    marginRight: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#1e293b',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   menuIcon: {
-    width: 24,
-    height: 18,
+    width: 18,
+    height: 14,
     justifyContent: 'space-between',
   },
   menuLine: {
     width: '100%',
-    height: 3,
-    backgroundColor: '#3b82f6',
-    borderRadius: 2,
+    height: 2,
+    backgroundColor: '#f8fafc',
+    borderRadius: 1,
   },
 });

@@ -305,15 +305,15 @@ export default function LiveStream() {
       {/* URL Configuration Modal */}
       <Modal
         visible={showUrlModal}
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         onRequestClose={() => setShowUrlModal(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Configure Stream URL</Text>
+            <Text style={styles.modalTitle}>SOURCE CONFIGURATION</Text>
             <Text style={styles.modalSubtitle}>
-              Enter the IP address of your ESP32-CAM or streaming device
+              INPUT DEVICE IP ADDRESS OR NODE ENDPOINT
             </Text>
             <TextInput
               style={styles.urlInput}
@@ -326,7 +326,7 @@ export default function LiveStream() {
               keyboardType="url"
             />
             <View style={styles.modalHint}>
-              <Text style={styles.hintText}>💡 Make sure your device is on the same network</Text>
+              <Text style={styles.hintText}>[SYS]: VERIFY NETWORK ISOLATION PROTOCOLS</Text>
             </View>
             <View style={styles.modalButtons}>
               <TouchableOpacity 
@@ -336,13 +336,13 @@ export default function LiveStream() {
                   setShowUrlModal(false);
                 }}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>ABORT</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={[styles.modalButton, styles.saveButton]} 
                 onPress={handleUrlChange}
               >
-                <Text style={styles.saveButtonText}>Connect</Text>
+                <Text style={styles.saveButtonText}>INITIALIZE</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -355,28 +355,27 @@ export default function LiveStream() {
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <View style={[styles.statusDot, isConnected ? styles.connected : styles.disconnected]} />
             <Text style={styles.statusText}>
-              {isConnected ? 'Connected' : 'Disconnected'}
+              {isConnected ? 'LINK_ESTABLISHED' : 'LINK_TERMINATED'}
             </Text>
           </View>
         </View>
-        <TouchableOpacity onPress={() => setShowUrlModal(true)}>
+        <TouchableOpacity onPress={() => setShowUrlModal(true)} style={{ marginTop: 8, marginBottom: 12 }}>
           <Text numberOfLines={1} ellipsizeMode="middle" style={styles.urlTextEditable}>
-            {streamUrl} ✏️
+            {streamUrl} [EDIT]
           </Text>
         </TouchableOpacity>
         <View style={styles.buttonGroup}>
-      
           <TouchableOpacity 
-            style={[styles.button, styles.captureButton]} 
+            style={[styles.actionButton, styles.captureButton]} 
             onPress={handleCaptureSnapshot}
             disabled={!isConnected || isCaptureLoading}
           >
-            <Text style={styles.buttonText}>
-              {isCaptureLoading ? '⏳' : '📸'} Capture
+            <Text style={styles.actionButtonText}>
+              {isCaptureLoading ? '[YIELD]' : 'CAPTURE'}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, styles.reconnectButton]} onPress={handleReload}>
-            <Text style={styles.buttonText}>🔄 Reconnect</Text>
+          <TouchableOpacity style={[styles.actionButton, styles.reconnectButton]} onPress={handleReload}>
+            <Text style={styles.actionButtonText}>RE-SYNC</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -385,10 +384,10 @@ export default function LiveStream() {
       <View style={styles.streamContainer}>
         {isLoading && (
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#3b82f6" />
-            <Text style={styles.loadingText}>Connecting to stream...</Text>
+            <ActivityIndicator size="large" color="#475569" />
+            <Text style={styles.loadingText}>ACQUIRING SIGNAL...</Text>
             {retryCount > 0 && (
-              <Text style={styles.retryText}>Attempt {retryCount}</Text>
+              <Text style={styles.retryText}>ATTEMPT 0{retryCount}</Text>
             )}
           </View>
         )}
@@ -407,23 +406,32 @@ export default function LiveStream() {
           javaScriptEnabled={true}
           domStorageEnabled={true}
         />
+        
+        {/* Overlay Overlay Crosshair for Tactical look */}
+        <View style={styles.crosshairContainer} pointerEvents="none">
+          <View style={styles.crosshairCenter} />
+          <View style={styles.crosshairTop} />
+          <View style={styles.crosshairBottom} />
+          <View style={styles.crosshairLeft} />
+          <View style={styles.crosshairRight} />
+        </View>
       </View>
 
       {/* Info Cards */}
       <View style={styles.infoRow}>
         <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>Status</Text>
-          <Text style={[styles.infoValue, { color: isConnected ? '#10b981' : '#ef4444' }]}>
-            {isConnected ? 'Live' : 'Offline'}
+          <Text style={styles.infoLabel}>STATUS</Text>
+          <Text style={[styles.infoValue, { color: isConnected ? '#10b981' : '#b91c1c' }]}>
+            {isConnected ? 'LIVE' : 'DOWN'}
           </Text>
         </View>
         <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>Retries</Text>
-          <Text style={styles.infoValue}>{retryCount}</Text>
+          <Text style={styles.infoLabel}>RETRIES</Text>
+          <Text style={styles.infoValue}>0{retryCount}</Text>
         </View>
         <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>Quality</Text>
-          <Text style={styles.infoValue}>HD</Text>
+          <Text style={styles.infoLabel}>SIGNAL</Text>
+          <Text style={styles.infoValue}>UHF-HD</Text>
         </View>
       </View>
     </View>
@@ -433,21 +441,16 @@ export default function LiveStream() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
-    padding: 24,
+    backgroundColor: '#f1f5f9',
+    padding: 18,
   },
   statusBar: {
-    flexDirection: 'column',
     backgroundColor: '#ffffff',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 4,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    gap: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   statusItem: {
     flexDirection: 'row',
@@ -456,94 +459,91 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 0,
     marginRight: 8,
   },
   connected: {
     backgroundColor: '#10b981',
   },
   disconnected: {
-    backgroundColor: '#ef4444',
+    backgroundColor: '#b91c1c',
   },
   statusText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1e293b',
-  },
-  urlText: {
-    fontSize: 13,
-    color: '#64748b',
-    width: '100%',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#f1f5f9',
-    borderRadius: 6,
-    overflow: 'hidden',
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#0f172a',
+    letterSpacing: 1,
   },
   urlTextEditable: {
-    fontSize: 13,
-    color: '#3b82f6',
+    fontSize: 11,
+    color: '#0f172a',
     width: '100%',
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 12,
-    backgroundColor: '#f1f5f9',
-    borderRadius: 6,
+    backgroundColor: '#f8fafc',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
     overflow: 'hidden',
-    fontWeight: '600',
+    fontWeight: '700',
+    fontFamily: 'monospace',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContent: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
+    borderRadius: 4,
     padding: 24,
     width: '100%',
     maxWidth: 400,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1e293b',
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0f172a',
     marginBottom: 8,
+    letterSpacing: 1,
   },
   modalSubtitle: {
-    fontSize: 14,
+    fontSize: 10,
     color: '#64748b',
     marginBottom: 20,
-    lineHeight: 20,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   urlInput: {
     backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 10,
+    borderColor: '#cbd5e1',
+    borderRadius: 4,
     padding: 14,
-    fontSize: 14,
-    color: '#1e293b',
+    fontSize: 12,
+    color: '#0f172a',
     marginBottom: 12,
+    fontFamily: 'monospace',
   },
   modalHint: {
-    backgroundColor: '#dbeafe',
+    backgroundColor: '#f1f5f9',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 4,
     marginBottom: 20,
+    borderLeftWidth: 3,
+    borderLeftColor: '#475569',
   },
   hintText: {
-    fontSize: 13,
-    color: '#1e40af',
-    lineHeight: 18,
+    fontSize: 10,
+    color: '#475569',
+    fontWeight: '800',
+    fontFamily: 'monospace',
   },
   modalButtons: {
     flexDirection: 'row',
@@ -552,92 +552,115 @@ const styles = StyleSheet.create({
   modalButton: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: 4,
     alignItems: 'center',
+    borderWidth: 1,
   },
   cancelButton: {
-    backgroundColor: '#f1f5f9',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
+    borderColor: '#cbd5e1',
   },
   cancelButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '800',
     color: '#475569',
+    letterSpacing: 1,
   },
   saveButton: {
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#0f172a',
+    borderColor: '#0f172a',
   },
   saveButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '800',
     color: '#ffffff',
+    letterSpacing: 1,
   },
   buttonGroup: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     gap: 12,
     width: '100%',
   },
-  button: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    minWidth: 120,
+  actionButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 4,
     alignItems: 'center',
+    borderWidth: 1,
   },
-  buttonText: {
+  actionButtonText: {
     color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   reconnectButton: {
-    backgroundColor: '#3b82f6',
-  },
-  stopButton: {
-    backgroundColor: '#ef4444',
+    backgroundColor: '#1e293b',
+    borderColor: '#0f172a',
   },
   captureButton: {
-    backgroundColor: '#10b981',
+    backgroundColor: '#0f172a',
+    borderColor: '#000000',
   },
   streamContainer: {
     flex: 1,
-    backgroundColor: '#e2e8f0',
-    borderRadius: 12,
+    backgroundColor: '#000000',
+    borderRadius: 4,
     overflow: 'hidden',
     position: 'relative',
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 4,
+    borderWidth: 2,
+    borderColor: '#1e293b',
   },
   webview: {
     flex: 1,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#000000',
   },
   loadingOverlay: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#f8fafcdd',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.85)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
   },
   loadingText: {
-    color: '#1e293b',
-    marginTop: 12,
-    fontSize: 14,
-    fontWeight: '500',
+    color: '#f8fafc',
+    marginTop: 16,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 2,
+    fontFamily: 'monospace',
   },
   retryText: {
-    color: '#64748b',
-    marginTop: 4,
-    fontSize: 12,
+    color: '#94a3b8',
+    marginTop: 8,
+    fontSize: 10,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+  },
+  crosshairContainer: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 500,
+  },
+  crosshairCenter: {
+    width: 2, height: 2, backgroundColor: 'rgba(255,255,255,0.7)',
+  },
+  crosshairTop: {
+    position: 'absolute', top: '35%', width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  crosshairBottom: {
+    position: 'absolute', bottom: '35%', width: 1, height: 20, backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  crosshairLeft: {
+    position: 'absolute', left: '35%', width: 20, height: 1, backgroundColor: 'rgba(255,255,255,0.5)',
+  },
+  crosshairRight: {
+    position: 'absolute', right: '35%', width: 20, height: 1, backgroundColor: 'rgba(255,255,255,0.5)',
   },
   infoRow: {
     flexDirection: 'row',
@@ -647,22 +670,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ffffff',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 4,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   infoLabel: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#64748b',
-    marginBottom: 4,
+    marginBottom: 6,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   infoValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1e293b',
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0f172a',
+    fontFamily: 'monospace',
   },
 });

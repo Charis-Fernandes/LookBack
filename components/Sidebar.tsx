@@ -7,15 +7,12 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { id: 'liveStream', label: 'Live Stream', icon: '📹' },
-  { id: 'evidenceVault', label: 'Evidence Vault', icon: '🗄️' },
-  { id: 'documentScanner', label: 'Document Scanner', icon: '📄' },
-  { id: 'evidenceSearch', label: 'Evidence Search', icon: '🔍' },
-  { id: 'deviceStatus', label: 'Device Status', icon: '📱' },
-  { id: 'accessLogs', label: 'Access Logs / Security Events', icon: '🔐' },
-  { id: 'userCase', label: 'User & Case Management', icon: '👥' },
-  { id: 'analytics', label: 'Analytics & Reports', icon: '📊' },
-  { id: 'settings', label: 'Settings', icon: '⚙️' },
+  { id: 'evidenceSearch', label: 'EVIDENCE SEARCH', icon: '🔍' },
+  { id: 'documentScanner', label: 'DOCUMENT SCANNER', icon: '📄' },
+  { id: 'liveStream', label: 'LIVE STREAM', icon: '📹' },
+  { id: 'analytics', label: 'ANALYTICS & REPORTS', icon: '📊' },
+  { id: 'userLogs', label: 'USER LOGS & MANAGEMENT', icon: '👥' },
+  { id: 'settings', label: 'SYSTEM SETTINGS', icon: '⚙️' },
 ];
 
 export default function Sidebar({ activeScreen, onNavigate }: SidebarProps) {
@@ -26,8 +23,8 @@ export default function Sidebar({ activeScreen, onNavigate }: SidebarProps) {
         <View style={styles.logoContainer}>
           <Text style={styles.logoIcon}>👁️</Text>
         </View>
-        <Text style={styles.logoText}>LookBack</Text>
-        <Text style={styles.subtitle}>Admin Portal</Text>
+        <Text style={styles.logoText}>LOOKBACK</Text>
+        <Text style={styles.subtitle}>ADMIN PORTAL</Text>
       </View>
 
       {/* Menu Items */}
@@ -68,44 +65,44 @@ export default function Sidebar({ activeScreen, onNavigate }: SidebarProps) {
 const styles = StyleSheet.create({
   container: {
     width: 260,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#0f172a',
     borderRightWidth: 1,
-    borderRightColor: '#e2e8f0',
+    borderRightColor: '#1e293b',
     height: '100%',
   },
   header: {
     padding: 24,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: '#1e293b',
     alignItems: 'center',
+    marginTop: 20,
   },
   logoContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#3b82f6',
+    width: 48,
+    height: 48,
+    borderRadius: 4,
+    backgroundColor: '#1e293b',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   logoIcon: {
-    fontSize: 28,
+    fontSize: 22,
   },
   logoText: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1e293b',
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#f8fafc',
     marginBottom: 4,
+    letterSpacing: 2,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#64748b',
-    fontWeight: '500',
+    fontWeight: '700',
+    letterSpacing: 2,
   },
   menuContainer: {
     flex: 1,
@@ -117,44 +114,45 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 20,
     marginHorizontal: 12,
-    borderRadius: 10,
+    borderRadius: 4,
     marginBottom: 4,
   },
   menuItemActive: {
-    backgroundColor: '#3b82f6',
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: '#1e293b',
+    borderWidth: 1,
+    borderColor: '#334155',
   },
   menuIcon: {
-    fontSize: 20,
-    marginRight: 12,
+    fontSize: 16,
+    marginRight: 14,
   },
   menuLabel: {
-    fontSize: 14,
-    color: '#475569',
-    fontWeight: '500',
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '700',
     flex: 1,
+    letterSpacing: 0.5,
   },
   menuLabelActive: {
-    color: '#ffffff',
-    fontWeight: '600',
+    color: '#f8fafc',
+    fontWeight: '800',
   },
   footer: {
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
+    borderTopColor: '#1e293b',
     alignItems: 'center',
   },
   footerText: {
-    fontSize: 12,
-    color: '#94a3b8',
+    fontSize: 10,
+    color: '#475569',
     marginBottom: 4,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   footerCopyright: {
     fontSize: 10,
-    color: '#cbd5e1',
+    color: '#334155',
+    fontWeight: '600',
   },
 });
