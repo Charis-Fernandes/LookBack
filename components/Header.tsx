@@ -4,9 +4,11 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 interface HeaderProps {
   title: string;
   onMenuPress?: () => void;
+  walletAddress?: string | null;
+  onLogout?: () => void;
 }
 
-export default function Header({ title, onMenuPress }: HeaderProps) {
+export default function Header({ title, onMenuPress, walletAddress, onLogout }: HeaderProps) {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -34,15 +36,26 @@ export default function Header({ title, onMenuPress }: HeaderProps) {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.profileButton}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>AD</Text>
+          {walletAddress ? (
+            <View style={styles.walletSection}>
+              <Text style={styles.walletText}>{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</Text>
+              {onLogout && (
+                <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
+                  <Text style={styles.logoutText}>Logout</Text>
+                </TouchableOpacity>
+              )}
             </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>ADMIN_01</Text>
-              <Text style={styles.profileRole}>EVIDENCE.SYS</Text>
-            </View>
-          </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.profileButton}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>AD</Text>
+              </View>
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileName}>ADMIN_01</Text>
+                <Text style={styles.profileRole}>EVIDENCE.SYS</Text>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>
@@ -150,6 +163,28 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontWeight: '700',
     letterSpacing: 1,
+  },
+  walletSection: {
+    marginHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  walletText: {
+    color: '#f8fafc',
+    fontSize: 10,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  logoutButton: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+    backgroundColor: '#ef4444',
+  },
+  logoutText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '700',
   },
   menuButton: {
     padding: 8,

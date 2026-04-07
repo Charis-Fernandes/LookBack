@@ -11,6 +11,7 @@ import {
   updateDoc,
   where,
   getDoc,
+  setDoc,
 } from 'firebase/firestore';
 import { db } from '../config/firebase.config';
 
@@ -24,6 +25,7 @@ export interface EvidenceItem {
   deviceId: string;
   quality: string;
   streamUrl: string;
+  category?: string;
   caseId?: string;
   description?: string;
   tags?: string[];
@@ -38,6 +40,11 @@ export interface EvidenceItem {
   extractedFields?: Record<string, any>;
   detectedObjects?: string[];
   processedDocId?: string;    // Reference to the typed collection doc (firs, id_cards, etc.)
+  // Blockchain fields
+  fileHash?: string;          // SHA-256 hash of the file
+  blockchainTxHash?: string;  // Blockchain transaction hash
+  blockchainStored?: boolean; // Whether evidence is stored on blockchain
+  blockchainEvidenceId?: string;
 }
 
 // ─── AI-Processed Document Interfaces ──────────────────────
@@ -321,8 +328,19 @@ class FirebaseService {
    * Save evidence metadata to Firestore
    * (Image itself goes to UploadThing; we store the URL here)
    */
-  async saveEvidence(evidence: Omit<EvidenceItem, 'id'>): Promise<string> {
+  async saveEvidence(evidence: Omit<EvidenceItem, 'id'>, id?: string): Promise<string> {
     try {
+      if (id) {
+        const docRef = doc(db, COLLECTIONS.EVIDENCE, id);
+        await setDoc(docRef, {
+          ...evidence,
+          timestamp: evidence.timestamp || Date.now(),
+          createdAt: Timestamp.now(),
+        });
+        console.log('✅ Evidence saved to Firestore with id:', id);
+        return id;
+      }
+
       const docRef = await addDoc(collection(db, COLLECTIONS.EVIDENCE), {
         ...evidence,
         timestamp: evidence.timestamp || Date.now(),

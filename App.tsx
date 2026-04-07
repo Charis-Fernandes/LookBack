@@ -1,6 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
+  Text,
+  Button,
   StyleSheet, 
   Platform, 
   StatusBar as RNStatusBar, 
@@ -11,6 +13,8 @@ import {
   ScrollView
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { ethers } from 'ethers';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Components
 import Sidebar from './components/Sidebar';
@@ -20,6 +24,7 @@ import Header from './components/Header';
 import LiveStream from './screens/LiveStream';
 import DocumentScanner from './screens/DocumentScanner';
 import EvidenceSearch from './screens/EvidenceSearch';
+import EvidenceVault from './screens/EvidenceVault';
 import AccessLogs from './screens/AccessLogs';
 import UserCaseManagement from './screens/UserCaseManagement';
 import AnalyticsReports from './screens/AnalyticsReports';
@@ -30,6 +35,7 @@ const SIDEBAR_WIDTH = 280;
 
 type ScreenId =
   | 'evidenceSearch'
+  | 'evidenceVault'
   | 'documentScanner'
   | 'liveStream'
   | 'analytics'
@@ -38,6 +44,7 @@ type ScreenId =
 
 const screenTitles: Record<ScreenId, string> = {
   evidenceSearch: 'Evidence Search',
+  evidenceVault: 'Evidence Vault',
   documentScanner: 'Document Scanner',
   liveStream: 'Live Stream',
   analytics: 'Analytics & Reports',
@@ -48,7 +55,114 @@ const screenTitles: Record<ScreenId, string> = {
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<ScreenId>('evidenceSearch');
   const [sidebarVisible, setSidebarVisible] = useState(false);
-  
+
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const [walletDebug, setWalletDebug] = useState<string | null>(null);
+  const [chainId, setChainId] = useState<string | null>(null);
+
+  const isWeb = Platform.OS === 'web';
+
+  const getEthereumProvider = () => {
+    const anyWindow = (globalThis as any)?.window;
+    const ethereum = anyWindow?.ethereum;
+
+    if (!ethereum) return null;
+
+    if (Array.isArray(ethereum.providers) && ethereum.providers.length > 0) {
+      const metamaskProvider = ethereum.providers.find((provider: any) => provider?.isMetaMask);
+      return metamaskProvider || ethereum.providers[0];
+    }
+
+    return ethereum;
+  };
+
+  const fetchCachedAddress = async () => {
+    try {
+      const cached = await AsyncStorage.getItem('walletAddress');
+      if (cached) setWalletAddress(cached);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    fetchCachedAddress();
+  }, []);
+
+  useEffect(() => {
+    if (!isWeb) return;
+
+    const provider = getEthereumProvider();
+    setWalletDebug(provider ? 'MetaMask provider detected' : 'MetaMask provider not detected');
+
+    const syncWalletState = async () => {
+      try {
+        if (!provider?.request) return;
+
+        const [accounts, currentChainId] = await Promise.all([
+          provider.request({ method: 'eth_accounts' }),
+          provider.request({ method: 'eth_chainId' }),
+        ]);
+
+        if (accounts?.[0]) {
+          setWalletAddress(accounts[0]);
+        }
+
+        if (currentChainId) {
+          setChainId(currentChainId);
+        }
+      } catch (error: any) {
+        setWalletDebug(error?.message ?? 'Could not read MetaMask state');
+      }
+    };
+
+    syncWalletState();
+  }, [isWeb]);
+
+  const disconnectWallet = async () => {
+    setWalletAddress(null);
+    setWalletError(null);
+    setWalletDebug('Wallet disconnected');
+    await AsyncStorage.removeItem('walletAddress');
+  };
+
+  const connectWallet = async () => {
+    setWalletError(null);
+    setIsConnecting(true);
+    setWalletDebug('Connect button clicked');
+
+    try {
+      if (!isWeb) {
+        throw new Error('MetaMask login is currently supported only on web (browser).');
+      }
+
+      const providerInstance = getEthereumProvider();
+      if (!providerInstance?.request) {
+        throw new Error('MetaMask extension not found. Please install MetaMask in your browser.');
+      }
+
+      setWalletDebug('Requesting account access from MetaMask');
+      const accounts = await providerInstance.request({ method: 'eth_requestAccounts' });
+      const currentChainId = await providerInstance.request({ method: 'eth_chainId' });
+
+      const provider = new ethers.BrowserProvider(providerInstance);
+      const signer = await provider.getSigner();
+      const address = await signer.getAddress();
+
+      setWalletAddress(address);
+      setChainId(currentChainId ?? null);
+      setWalletDebug(`Connected: ${accounts?.[0] || address}`);
+      await AsyncStorage.setItem('walletAddress', address);
+    } catch (error: any) {
+      setWalletError(error?.message ?? 'Wallet connection failed');
+      setWalletDebug(error?.code ? `MetaMask error code: ${error.code}` : 'Wallet connection failed');
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
   const translateX = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const dragX = useRef(0);
@@ -57,6 +171,8 @@ export default function App() {
     switch (activeScreen) {
       case 'evidenceSearch':
         return <EvidenceSearch />;
+      case 'evidenceVault':
+        return <EvidenceVault />;
       case 'documentScanner':
         return <DocumentScanner />;
       case 'liveStream':
@@ -191,7 +307,36 @@ export default function App() {
       },
     })
   ).current;
-
+  if (!walletAddress) {
+    return (
+      <View style={styles.container}>
+        <StatusBar style="dark" />
+        <View style={styles.loginContainer}>
+          <Text style={styles.loginTitle}>LookBack Admin Dashboard</Text>
+          <Text style={styles.loginSubtitle}>Please connect with MetaMask to continue.</Text>
+          {!isWeb && (
+            <Text style={styles.loginError}>MetaMask login is only supported in web browsers.</Text>
+          )}
+          {walletError && <Text style={styles.loginError}>{walletError}</Text>}
+          {walletDebug && <Text style={styles.loginDebug}>{walletDebug}</Text>}
+          {chainId && <Text style={styles.loginDebug}>Chain ID: {chainId}</Text>}
+          <View style={styles.loginButtonWrapper}>
+            <Button
+              title={isConnecting ? 'Connecting...' : 'Connect with MetaMask'}
+              onPress={connectWallet}
+              disabled={isConnecting || !isWeb}
+            />
+          </View>
+          {walletAddress && (
+            <View style={styles.loginInfo}>
+              <Text>Connected: {walletAddress}</Text>
+              <Button title="Logout" onPress={disconnectWallet} />
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  }
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -202,6 +347,8 @@ export default function App() {
           <Header 
             title={screenTitles[activeScreen]} 
             onMenuPress={toggleSidebar}
+            walletAddress={walletAddress}
+            onLogout={disconnectWallet}
           />
 
           {/* Screen Content */}
@@ -296,5 +443,44 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     zIndex: 999,
   },
+  loginContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    paddingHorizontal: 24,
+  },
+  loginTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#0f172a',
+    marginBottom: 8,
+  },
+  loginSubtitle: {
+    fontSize: 16,
+    color: '#334155',
+    marginBottom: 18,
+    textAlign: 'center',
+  },
+  loginButtonWrapper: {
+    width: '100%',
+    maxWidth: 280,
+    marginBottom: 16,
+  },
+  loginInfo: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  loginError: {
+    color: '#dc2626',
+    fontWeight: '700',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  loginDebug: {
+    color: '#475569',
+    fontSize: 12,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
 });
-

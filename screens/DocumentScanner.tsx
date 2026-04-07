@@ -5,6 +5,9 @@ import * as ImagePicker from 'expo-image-picker';
 import LocalFileStorageService from '../services/LocalFileStorageService';
 import FirebaseService from '../services/FirebaseService';
 import AIService from '../services/AIService';
+import BlynkService from '../services/BlynkService';
+import { BLYNK_CONFIG } from '../config/blynk.config';
+import { createEvidenceOnChain, hashDataUrl } from '../services/BlockchainService';
 
 export default function DocumentScanner() {
   const [streamUrl, setStreamUrl] = useState('http://10.145.212.207:81/stream');
@@ -15,6 +18,8 @@ export default function DocumentScanner() {
   const [isConnected, setIsConnected] = useState(false);
   const [aiServerOnline, setAiServerOnline] = useState(false);
   const [capturedImageUri, setCapturedImageUri] = useState<string | null>(null);
+  const [caseId, setCaseId] = useState('');
+  const [uploadedBy, setUploadedBy] = useState('Local Operator');
   const [inputMode, setInputMode] = useState<'esp32' | 'camera' | 'upload'>('esp32');
 
   useEffect(() => {
@@ -200,27 +205,66 @@ export default function DocumentScanner() {
       return;
     }
 
-    // Save to local storage
+    const fileHash = hashDataUrl(dataUrl);
+
+    // Save to local storage and retain the snapshot ID
     console.log('💾 Saving document to Evidence Vault...');
-    await LocalFileStorageService.saveSnapshot(dataUrl, {
+    const snapshotId = await LocalFileStorageService.saveSnapshot(dataUrl, {
       deviceId,
       quality: 'HD',
       streamUrl: streamUrl,
     });
 
-    // Save base evidence to Firestore
-    console.log('☁️ Saving evidence to Firestore...');
+    // Save evidence metadata to Firestore with a stable id
+    console.log('☁️ Saving evidence metadata to Firestore...');
+    const sourceLocation = inputMode === 'esp32'
+      ? 'ESP32-CAM'
+      : inputMode === 'camera'
+        ? 'Device Camera'
+        : 'Local Upload';
+
     const evidenceId = await FirebaseService.saveEvidence({
-      imageUrl: dataUrl,
+      imageUrl: `snapshot://${snapshotId}`,
       timestamp: Date.now(),
       deviceId,
       quality: 'HD',
       streamUrl: streamUrl,
+      category: 'document',
       tags: ['document', 'scan'],
-    }).catch(err => {
+      caseId: caseId || 'UNASSIGNED',
+      uploadedBy: uploadedBy || 'Local Operator',
+      location: sourceLocation,
+      fileHash,
+      blockchainStored: false,
+      blockchainEvidenceId: snapshotId,
+    }, snapshotId).catch(err => {
       console.warn('Firestore save warning:', err);
       return '';
     });
+
+    // ── BLOCKCHAIN INTEGRATION: Store evidence hash on-chain ──
+    if (evidenceId) {
+      try {
+        console.log('🔗 Storing evidence on blockchain...');
+
+        const txHash = await createEvidenceOnChain(evidenceId, fileHash);
+
+        // Update Firestore with blockchain data
+        await FirebaseService.updateEvidence(evidenceId, {
+          fileHash,
+          blockchainTxHash: txHash,
+          blockchainStored: true,
+          blockchainEvidenceId: evidenceId,
+        });
+
+        console.log('✅ Evidence secured on blockchain:', txHash);
+      } catch (blockchainError) {
+        console.warn('⚠️ Blockchain storage failed:', blockchainError);
+        // Continue with upload even if blockchain fails
+      }
+    } else {
+      console.warn('⚠️ Evidence ID not available, blockchain storage skipped');
+    }
 
     setScanCount(prev => prev + 1);
     Alert.alert('✅ Saved', 'Document captured and saved. AI is processing in the background.');
@@ -359,11 +403,10 @@ export default function DocumentScanner() {
   };
 
   const handleChangeUrl = () => {
-    setStreamUrl(tempUrl);
-    setShowUrlModal(false);
-    setIsConnected(false);
-  };
-
+      setStreamUrl(tempUrl);
+      setShowUrlModal(false);
+      setIsConnected(false);
+    };
   const handleStreamLoad = () => {
     setIsConnected(true);
     console.log('✅ ESP32-CAM stream connected');
@@ -482,6 +525,26 @@ export default function DocumentScanner() {
               ? '1. UTILIZE ONBOARD SENSOR\n2. VERIFY LIGHTING CONDITIONS\n3. EXPORT TO LOG'
               : '1. ACCESS SECURE PARTITION\n2. SELECT TARGET DOCUMENT\n3. INITIATE AI PARSING'}
           </Text>
+        </View>
+
+        <View style={styles.metadataCard}>
+          <Text style={styles.metaLabel}>CASE ID</Text>
+          <TextInput
+            style={styles.metaInput}
+            value={caseId}
+            onChangeText={setCaseId}
+            placeholder="Case #2024-0001"
+            placeholderTextColor="#94a3b8"
+            autoCapitalize="characters"
+          />
+          <Text style={styles.metaLabel}>UPLOADED BY</Text>
+          <TextInput
+            style={styles.metaInput}
+            value={uploadedBy}
+            onChangeText={setUploadedBy}
+            placeholder="Operator name"
+            placeholderTextColor="#94a3b8"
+          />
         </View>
 
         {/* ═══ Action Buttons ═══ */}
@@ -983,6 +1046,34 @@ const styles = StyleSheet.create({
   },
   modeTabTextActive: {
     color: '#0f172a',
+  },
+  metadataCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    padding: 14,
+    marginBottom: 20,
+  },
+  metaLabel: {
+    fontSize: 10,
+    color: '#475569',
+    fontWeight: '800',
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  metaInput: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+    fontSize: 12,
+    color: '#0f172a',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontWeight: '600',
   },
   cameraButton: {
     backgroundColor: '#1e293b',

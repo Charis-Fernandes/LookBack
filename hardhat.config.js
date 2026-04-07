@@ -1,0 +1,17 @@
+require("@nomicfoundation/hardhat-toolbox");
+
+/** @type import('hardhat/config').HardhatUserConfig */
+module.exports = {
+  solidity: "0.8.19",
+  networks: {
+    ganache: {
+      url: "http://127.0.0.1:8545",
+      accounts: [
+        "0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d", // Account 0 from Ganache
+        "0x6cbed15c793ce57650b9877cf6fa156fbef513c4e6134f022a85b1a5479136d2",  // Account 1
+        "0x6370fd033278c143179d81c5526140625662b8daa446c22ee2d73db3707e620c",  // Account 2
+        // Add more accounts as needed
+      ]
+    }
+  }
+};
