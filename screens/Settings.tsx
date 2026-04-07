@@ -44,21 +44,21 @@ export default function Settings() {
         </View>
       </View>
 
-      {/* Blynk IoT Integration Status */}
+      {/* External Node Integration Status */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>EXTERNAL INTEGRATION</Text>
         <View style={styles.settingsCard}>
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>BLYNK IOT NODE</Text>
+            <Text style={styles.inputLabel}>ESP32-CAM NODE</Text>
             <View style={styles.statusRow}>
               <View style={styles.statusDotGreen} />
-              <Text style={styles.statusText}>CONNECTED</Text>
+              <Text style={styles.statusText}>CONNECTED & ACTIVE</Text>
             </View>
             <Text style={styles.settingDescription}>
-              TMPL: lookback (TMPL31Se8tinV)
+              LOCAL NETWORK UPLINK
             </Text>
             <Text style={styles.settingDescription}>
-              UPLINK ACTIVE
+              STREAM & CAPTURE READY
             </Text>
           </View>
         </View>

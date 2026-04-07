@@ -10,8 +10,6 @@ import {
   Alert,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
-import BlynkService from '../services/BlynkService';
-import { BLYNK_CONFIG } from '../config/blynk.config';
 import LocalFileStorageService from '../services/LocalFileStorageService';
 import FirebaseService from '../services/FirebaseService';
 
@@ -26,7 +24,6 @@ export default function LiveStream() {
   const [streamQuality, setStreamQuality] = useState<'SD' | 'HD' | 'FHD'>('HD');
   const [showQualityModal, setShowQualityModal] = useState(false);
   const webViewRef = useRef<WebView>(null);
-  const blynkService = useRef(new BlynkService(BLYNK_CONFIG.AUTH_TOKEN)).current;
 
   useEffect(() => {
     if (!isConnected && retryCount > 0 && retryCount < 5) {
@@ -37,53 +34,12 @@ export default function LiveStream() {
     }
   }, [isConnected, retryCount]);
 
-  // Poll Blynk for remote control commands
-  useEffect(() => {
-    const pollBlynk = async () => {
-      try {
-        // Check for reconnect trigger from Blynk
-        const shouldReconnect = await blynkService.getReconnectTrigger();
-        if (shouldReconnect) {
-          handleReload();
-        }
-
-        // Check camera control state
-        const cameraOn = await blynkService.getCameraControl();
-        if (!cameraOn && isConnected) {
-          // Stop stream if camera is turned off via Blynk
-          setIsConnected(false);
-        }
-      } catch (error) {
-        console.error('Blynk poll error:', error);
-      }
-    };
-
-    const interval = setInterval(pollBlynk, 3000); // Poll every 3 seconds
-    return () => clearInterval(interval);
-  }, [isConnected]);
-
-  // Update Blynk when connection status changes
-  useEffect(() => {
-    blynkService.updateStreamStatus(isConnected);
-    blynkService.updateCameraControl(isConnected);
-    
-    if (isConnected) {
-      blynkService.updateQuality('Good');
-      blynkService.logEvent('STREAM_CONNECT', 'Live stream connected successfully');
-    } else {
-      blynkService.updateQuality('Offline');
-    }
-  }, [isConnected]);
-
   const handleReload = () => {
     setIsLoading(true);
     setRetryCount(prev => prev + 1);
     if (webViewRef.current) {
       webViewRef.current.reload();
     }
-    
-    // Notify Blynk
-    blynkService.logEvent('STREAM_RECONNECT', `Reconnecting to stream (attempt ${retryCount + 1})`);
   };
 
   const handleLoadStart = () => {
@@ -94,18 +50,11 @@ export default function LiveStream() {
     setIsLoading(false);
     setIsConnected(true);
     setRetryCount(0);
-    
-    // Notify Blynk
-    blynkService.sendNotification('📹 LookBack stream is now live!');
   };
 
   const handleError = () => {
     setIsLoading(false);
     setIsConnected(false);
-    
-    // Notify Blynk
-    blynkService.updateDeviceStatus('Error');
-    blynkService.logEvent('STREAM_ERROR', 'Failed to connect to stream');
   };
 
   const handleUrlChange = () => {
@@ -113,10 +62,6 @@ export default function LiveStream() {
     setShowUrlModal(false);
     setRetryCount(0);
     handleReload();
-    
-    // Update Blynk with new URL
-    blynkService.updateStreamUrl(tempUrl);
-    blynkService.logEvent('URL_CHANGE', `Stream URL updated to ${tempUrl}`);
   };
 
   const handleCaptureSnapshot = async () => {
@@ -168,10 +113,6 @@ export default function LiveStream() {
         streamUrl: streamUrl,
       }).catch(err => console.warn('Firestore save warning:', err));
 
-      // Log to Blynk
-      blynkService.logEvent('SNAPSHOT_CAPTURED', 'Snapshot saved locally');
-      blynkService.sendNotification('📸 Snapshot captured and saved!');
-
       Alert.alert(
         '✅ Success',
         'Snapshot captured and saved to local storage!',
@@ -186,8 +127,6 @@ export default function LiveStream() {
         'Failed to capture snapshot. Please try again.',
         [{ text: 'OK' }]
       );
-      
-      blynkService.logEvent('SNAPSHOT_ERROR', `Failed to capture: ${error}`);
     } finally {
       setIsCaptureLoading(false);
     }
@@ -196,8 +135,6 @@ export default function LiveStream() {
   const handleQualityChange = (quality: 'SD' | 'HD' | 'FHD') => {
     setStreamQuality(quality);
     setShowQualityModal(false);
-    blynkService.updateQuality(quality);
-    blynkService.logEvent('QUALITY_CHANGE', `Quality changed to ${quality}`);
   };
 
   const htmlContent = `

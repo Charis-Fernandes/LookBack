@@ -8,7 +8,7 @@
 
 // Default: Flask server running on the development machine
 // Change this to your server's IP when deploying
-const AI_SERVER_URL = 'http://192.168.0.119:5000';
+const AI_SERVER_URL = 'http://192.168.6.218:5000';
 
 // ═══ Types ═══════════════════════════════════════════════════════
 

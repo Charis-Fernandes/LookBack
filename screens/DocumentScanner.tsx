@@ -5,8 +5,6 @@ import * as ImagePicker from 'expo-image-picker';
 import LocalFileStorageService from '../services/LocalFileStorageService';
 import FirebaseService from '../services/FirebaseService';
 import AIService from '../services/AIService';
-import BlynkService from '../services/BlynkService';
-import { BLYNK_CONFIG } from '../config/blynk.config';
 
 export default function DocumentScanner() {
   const [streamUrl, setStreamUrl] = useState('http://10.145.212.207:81/stream');
@@ -18,7 +16,6 @@ export default function DocumentScanner() {
   const [aiServerOnline, setAiServerOnline] = useState(false);
   const [capturedImageUri, setCapturedImageUri] = useState<string | null>(null);
   const [inputMode, setInputMode] = useState<'esp32' | 'camera' | 'upload'>('esp32');
-  const blynkService = new BlynkService(BLYNK_CONFIG.AUTH_TOKEN);
 
   useEffect(() => {
     loadScanCount();
@@ -358,8 +355,6 @@ export default function DocumentScanner() {
       console.error('🤖 [Background] Pipeline error:', error);
     }
 
-    blynkService.logEvent('DOCUMENT_SCANNED', 'Document scanned and processed');
-    blynkService.sendNotification('📄 Document scanned & AI processed!');
     await loadScanCount();
   };
 
