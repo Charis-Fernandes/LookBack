@@ -14,11 +14,13 @@ import {
   Platform,
 } from 'react-native';
 import FirebaseService, {
+  EvidenceItem,
   ProcessedDocument,
   FIRDocument,
   IDCardDocument,
   PoliceReportDocument,
 } from '../services/FirebaseService';
+import { verifyEvidenceRecord, blockchainContractConfig } from '../services/BlockchainService';
 
 type DocTypeFilter = 'ALL' | 'FIR' | 'ID_CARD' | 'POLICE_REPORT' | 'CHARGE_SHEET';
 
@@ -51,6 +53,9 @@ export default function EvidenceSearch() {
   const [idCardDetail, setIdCardDetail] = useState<IDCardDocument | null>(null);
   const [reportDetail, setReportDetail] = useState<PoliceReportDocument | null>(null);
   const [showImage, setShowImage] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<Record<string, string>>({});
+  const [verifying, setVerifying] = useState<Record<string, boolean>>({});
+  const [proofRecords, setProofRecords] = useState<Record<string, { blockchainRecord: any; freshFileHash: string }>>({});
 
   useEffect(() => { loadInitialData(); }, []);
   useEffect(() => { if (!initialLoad) performSearch(); }, [activeFilter, filterYear, filterMonth]);
@@ -163,6 +168,60 @@ export default function EvidenceSearch() {
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete', style: 'destructive', onPress: doDelete },
       ]);
+    }
+  };
+
+  const handleVerify = async (pdoc: ProcessedDocument) => {
+    const evidenceId = pdoc.evidenceId || '';
+    const imageUrl = pdoc.imageUrl || '';
+
+    if (!evidenceId) {
+      Alert.alert('Verification Unavailable', 'No linked evidence ID found for this document.');
+      return;
+    }
+
+    if (!imageUrl) {
+      Alert.alert('Verification Unavailable', 'No image URL available for this document.');
+      return;
+    }
+
+    setVerifying((prev) => ({ ...prev, [evidenceId]: true }));
+    try {
+      const evidence: EvidenceItem | null = await FirebaseService.getEvidenceById(evidenceId);
+      const storedHash = evidence?.fileHash || null;
+
+      const {
+        blockchainRecord,
+        freshFileHash,
+        blockchainMatchesFreshHash,
+        blockchainMatchesFirebaseHash,
+        firebaseMatchesFreshHash,
+      } = await verifyEvidenceRecord(evidenceId, storedHash, imageUrl);
+
+      setVerificationStatus((prev) => ({
+        ...prev,
+        [evidenceId]: blockchainMatchesFreshHash
+          ? `Verified: image hash matches blockchain (${freshFileHash.slice(0, 12)}...)`
+          : storedHash && firebaseMatchesFreshHash
+            ? `Warning: blockchain hash differs from Firebase hash (${blockchainRecord.evidenceHash.slice(0, 12)}...)`
+            : storedHash && blockchainMatchesFirebaseHash
+              ? `Warning: Firebase hash differs from current image (${freshFileHash.slice(0, 12)}...)`
+              : storedHash
+                ? 'Mismatch: blockchain, Firebase, and image hashes differ'
+                : 'Mismatch: on-chain hash does not match current image',
+      }));
+
+      setProofRecords((prev) => ({
+        ...prev,
+        [evidenceId]: { blockchainRecord, freshFileHash },
+      }));
+    } catch (error) {
+      setVerificationStatus((prev) => ({
+        ...prev,
+        [evidenceId]: `Could not verify: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      }));
+    } finally {
+      setVerifying((prev) => ({ ...prev, [evidenceId]: false }));
     }
   };
 
@@ -604,7 +663,59 @@ export default function EvidenceSearch() {
                       <Text style={styles.techLabel}>DOCUMENT ID</Text>
                       <Text style={[styles.techValue, { fontSize: 10 }]}>{selectedDoc.id ? selectedDoc.id.substring(0, 12) + '...' : 'N/A'}</Text>
                     </View>
+                    <View style={styles.techRow}>
+                      <Text style={styles.techLabel}>EVIDENCE ID</Text>
+                      <Text style={[styles.techValue, { fontSize: 10 }]}>{selectedDoc.evidenceId ? selectedDoc.evidenceId.substring(0, 12) + '...' : 'N/A'}</Text>
+                    </View>
+                    <View style={styles.techRow}>
+                      <Text style={styles.techLabel}>CONTRACT</Text>
+                      <Text style={[styles.techValue, { fontSize: 10 }]}>{blockchainContractConfig.address.substring(0, 12)}...</Text>
+                    </View>
                   </View>
+
+                  {/* Blockchain Verification */}
+                  {selectedDoc.evidenceId ? (
+                    <View style={styles.detailCard}>
+                      <Text style={styles.detailCardTitle}>BLOCKCHAIN VERIFICATION</Text>
+                      <TouchableOpacity
+                        style={[styles.verifyButton, verifying[selectedDoc.evidenceId] && styles.verifyButtonDisabled]}
+                        onPress={() => handleVerify(selectedDoc)}
+                        disabled={verifying[selectedDoc.evidenceId]}
+                      >
+                        <Text style={styles.verifyButtonText}>
+                          {verifying[selectedDoc.evidenceId] ? '[VERIFYING...]' : '[VERIFY INTEGRITY]'}
+                        </Text>
+                      </TouchableOpacity>
+
+                      {verificationStatus[selectedDoc.evidenceId] && (
+                        <Text
+                          style={[
+                            styles.verificationStatus,
+                            verificationStatus[selectedDoc.evidenceId].startsWith('Verified') && styles.statusValid,
+                            verificationStatus[selectedDoc.evidenceId].startsWith('Mismatch') && styles.statusInvalid,
+                            verificationStatus[selectedDoc.evidenceId].startsWith('Warning') && styles.statusWarning,
+                          ]}
+                        >
+                          {verificationStatus[selectedDoc.evidenceId]}
+                        </Text>
+                      )}
+
+                      {proofRecords[selectedDoc.evidenceId] && (
+                        <View style={styles.blockchainProof}>
+                          <Text style={styles.fieldLabel}>ON-CHAIN PROOF</Text>
+                          <Text style={styles.sectionDetailText}>
+                            Timestamp: {new Date(proofRecords[selectedDoc.evidenceId].blockchainRecord.timestamp * 1000).toLocaleString()}
+                          </Text>
+                          <Text style={styles.sectionDetailText}>
+                            Officer: {proofRecords[selectedDoc.evidenceId].blockchainRecord.officerAddress}
+                          </Text>
+                          <Text style={styles.sectionDetailText}>
+                            Hash: {proofRecords[selectedDoc.evidenceId].blockchainRecord.evidenceHash.slice(0, 20)}...
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  ) : null}
                 </ScrollView>
 
                 {/* Actions */}
@@ -809,4 +920,56 @@ const styles = StyleSheet.create({
   btnSecondaryText: { color: '#475569', fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
   btnDanger: { backgroundColor: '#fef2f2', borderColor: '#fca5a5' },
   btnDangerText: { color: '#b91c1c', fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
+  verifyButton: {
+    marginTop: 10,
+    backgroundColor: '#0f172a',
+    borderColor: '#1e293b',
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  verifyButtonDisabled: {
+    backgroundColor: '#94a3b8',
+    borderColor: '#94a3b8',
+  },
+  verifyButtonText: {
+    color: '#ffffff',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+    fontFamily: 'monospace',
+  },
+  verificationStatus: {
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 4,
+    fontSize: 11,
+    fontWeight: '700',
+    borderWidth: 1,
+  },
+  statusValid: {
+    backgroundColor: '#dcfce7',
+    color: '#166534',
+    borderColor: '#86efac',
+  },
+  statusInvalid: {
+    backgroundColor: '#fef2f2',
+    color: '#b91c1c',
+    borderColor: '#fca5a5',
+  },
+  statusWarning: {
+    backgroundColor: '#fef3c7',
+    color: '#92400e',
+    borderColor: '#fcd34d',
+  },
+  blockchainProof: {
+    marginTop: 10,
+    padding: 10,
+    borderRadius: 4,
+    backgroundColor: '#eff6ff',
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
 });

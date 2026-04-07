@@ -378,6 +378,23 @@ class FirebaseService {
   }
 
   /**
+   * Get a single evidence document by id
+   */
+  async getEvidenceById(id: string): Promise<EvidenceItem | null> {
+    try {
+      const snapshot = await getDoc(doc(db, COLLECTIONS.EVIDENCE, id));
+      if (!snapshot.exists()) return null;
+      return {
+        id: snapshot.id,
+        ...snapshot.data(),
+      } as EvidenceItem;
+    } catch (error) {
+      console.error('❌ Firestore get evidence error:', error);
+      return null;
+    }
+  }
+
+  /**
    * Get evidence by case ID
    */
   async getEvidenceByCase(caseId: string): Promise<EvidenceItem[]> {

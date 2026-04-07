@@ -44,8 +44,8 @@ async function testBlockchainIntegration() {
   }
 }
 
-// Run test if this file is executed directly
-if (require.main === module) {
+// Run test when executed directly under Node ESM.
+if (typeof process !== 'undefined' && process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
   testBlockchainIntegration();
 }
 

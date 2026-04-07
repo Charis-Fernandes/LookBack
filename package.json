@@ -2,6 +2,7 @@
   "name": "lookback",
   "license": "0BSD",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.ts",
   "scripts": {
     "start": "concurrently --names EXPO,AI --prefix-colors cyan,magenta \"expo start\" \"npm run ai-server\"",
@@ -27,6 +28,7 @@
     "expo-image-picker": "^17.0.8",
     "expo-status-bar": "~3.0.8",
     "firebase": "^12.10.0",
+    "hardhat": "^3.3.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.4",

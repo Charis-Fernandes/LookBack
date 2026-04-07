@@ -20,8 +20,32 @@ export interface StoredSnapshot {
 }
 
 const STORAGE_KEY = '@lookback_snapshots';
+const MAX_SNAPSHOTS = 50;
+
+const isQuotaExceededError = (error: unknown) => {
+  if (!(error instanceof Error)) return false;
+  return error.name === 'QuotaExceededError' || error.message.includes('exceeded the quota');
+};
 
 class LocalFileStorageService {
+  private async persistWithQuotaPruning(snapshots: StoredSnapshot[]): Promise<StoredSnapshot[]> {
+    const candidate = [...snapshots];
+
+    while (candidate.length > 0) {
+      try {
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(candidate));
+        return candidate;
+      } catch (error) {
+        if (!isQuotaExceededError(error)) {
+          throw error;
+        }
+        candidate.pop();
+      }
+    }
+
+    throw new Error('Storage quota exceeded. Clear Evidence Vault or upload a smaller image.');
+  }
+
   /**
    * Save a snapshot to local storage
    * @param imageData - Base64 image data (data:image/jpeg;base64,...)
@@ -53,10 +77,17 @@ class LocalFileStorageService {
       const updated = [snapshot, ...existing];
       
       // Keep only last 50 snapshots to avoid storage issues
-      const limited = updated.slice(0, 50);
-      
-      // Save to AsyncStorage
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(limited));
+      const limited = updated.slice(0, MAX_SNAPSHOTS);
+
+      // Save to AsyncStorage and prune oldest entries if browser quota is reached
+      const persisted = await this.persistWithQuotaPruning(limited);
+      if (persisted.length < limited.length) {
+        console.warn(`⚠️ Storage quota reached; pruned ${limited.length - persisted.length} old snapshot(s).`);
+      }
+
+      if (!persisted.find((item) => item.id === id)) {
+        throw new Error('Storage quota exceeded. Clear Evidence Vault or upload a smaller image.');
+      }
 
       console.log('✅ Snapshot saved locally:', id);
       return id; // Return the snapshot ID for later reference

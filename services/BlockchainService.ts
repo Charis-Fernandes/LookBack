@@ -16,8 +16,10 @@ export interface EvidenceVerificationResult {
   firebaseMatchesFreshHash: boolean;
 }
 
-// Use environment variable or fallback to Ganache address
-const CONTRACT_ADDRESS = process.env.BLOCKCHAIN_CONTRACT_ADDRESS || '0x7a79533a65929c9cD62923f49306969449a5FE8E';
+// Use environment variable or fallback to the deployed Ganache contract address
+const CONTRACT_ADDRESS = process.env.BLOCKCHAIN_CONTRACT_ADDRESS || '0x239d6BDcD109d796b791b4d1A7Bd8f7f2078F60A';
+const GANACHE_CHAIN_ID = (process.env.EXPO_PUBLIC_BLOCKCHAIN_CHAIN_ID || '0x539').toLowerCase();
+const GANACHE_RPC_URL = process.env.EXPO_PUBLIC_BLOCKCHAIN_RPC_URL || 'http://127.0.0.1:7545';
 
 const CONTRACT_ABI = [
   {
@@ -77,6 +79,43 @@ const getEthereumProvider = () => {
   throw new Error('Ethereum provider not available. Please use MetaMask on web or configure mobile wallet connection.');
 };
 
+const ensureGanacheNetwork = async (ethereum: any) => {
+  const currentChainId = (await ethereum.request({ method: 'eth_chainId' }))?.toLowerCase();
+  if (currentChainId === GANACHE_CHAIN_ID) {
+    return;
+  }
+
+  try {
+    await ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: GANACHE_CHAIN_ID }],
+    });
+  } catch (error: any) {
+    if (error?.code === 4902) {
+      await ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [
+          {
+            chainId: GANACHE_CHAIN_ID,
+            chainName: 'Ganache Local',
+            rpcUrls: [GANACHE_RPC_URL],
+            nativeCurrency: {
+              name: 'ETH',
+              symbol: 'ETH',
+              decimals: 18,
+            },
+          },
+        ],
+      });
+      return;
+    }
+
+    throw new Error(
+      `Please switch MetaMask to your Ganache network (chain ${GANACHE_CHAIN_ID}, RPC ${GANACHE_RPC_URL}).`
+    );
+  }
+};
+
 const normalizeHash = (hash: string) => hash.trim().toLowerCase().replace(/^0x/, '');
 
 const base64ToBytes = (base64: string) => {
@@ -103,12 +142,29 @@ const getContract = async (requestAccount = true) => {
     throw new Error('MetaMask extension not found. Please install MetaMask in your browser.');
   }
 
+  await ensureGanacheNetwork(ethereum);
+
   if (requestAccount) {
     await ethereum.request({ method: 'eth_requestAccounts' });
   }
 
   const provider = new ethers.BrowserProvider(ethereum);
   const signer = await provider.getSigner();
+
+  const signerAddress = await signer.getAddress();
+  if (signerAddress.toLowerCase() === CONTRACT_ADDRESS.toLowerCase()) {
+    throw new Error(
+      'Blockchain contract address is set to the connected wallet address. Update BLOCKCHAIN_CONTRACT_ADDRESS to the deployed Ganache contract address.'
+    );
+  }
+
+  const contractCode = await provider.getCode(CONTRACT_ADDRESS);
+  if (!contractCode || contractCode === '0x') {
+    throw new Error(
+      `No contract deployed at ${CONTRACT_ADDRESS}. Deploy EvidenceStorage to Ganache and update BLOCKCHAIN_CONTRACT_ADDRESS.`
+    );
+  }
+
   return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 };
 

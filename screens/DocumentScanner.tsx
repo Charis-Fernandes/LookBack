@@ -492,7 +492,7 @@ export default function DocumentScanner() {
           /* Camera / Upload Image Preview */
           <View style={styles.cameraContainer}>
             {capturedImageUri ? (
-              <Image source={{ uri: capturedImageUri }} style={styles.capturedImage} />
+              <Image source={{ uri: capturedImageUri }} style={styles.capturedImage} resizeMode="contain" />
             ) : (
               <View style={styles.cameraPlaceholder}>
                 <Text style={styles.cameraIcon}>{'>_'}</Text>
@@ -744,7 +744,6 @@ const styles = StyleSheet.create({
   },
   capturedImage: {
     height: 400,
-    resizeMode: 'contain',
     backgroundColor: '#000000',
   },
   cameraPlaceholder: {

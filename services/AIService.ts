@@ -6,9 +6,36 @@
  *   Image → OCR → Classification → Field Extraction → YOLO Detection
  */
 
+import { Platform } from 'react-native';
+
 // Default: Flask server running on the development machine
-// Change this to your server's IP when deploying
-const AI_SERVER_URL = 'http://192.168.6.218:5000';
+// Optional override: EXPO_PUBLIC_AI_SERVER_URL=http://<host>:5000
+const normalizeServerUrl = (url: string) => url.replace(/\/+$/, '');
+
+const resolveDefaultServerUrl = () => {
+  const envUrl = (process.env.EXPO_PUBLIC_AI_SERVER_URL || '').trim();
+  if (envUrl) {
+    return normalizeServerUrl(envUrl);
+  }
+
+  const maybeWindow = (globalThis as any)?.window;
+  const host = maybeWindow?.location?.hostname;
+
+  if (Platform.OS === 'web') {
+    if (host && host !== 'localhost' && host !== '127.0.0.1') {
+      return `http://${host}:5000`;
+    }
+    return 'http://127.0.0.1:5000';
+  }
+
+  if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:5000';
+  }
+
+  return 'http://127.0.0.1:5000';
+};
+
+const AI_SERVER_URL = resolveDefaultServerUrl();
 
 // ═══ Types ═══════════════════════════════════════════════════════
 
@@ -78,14 +105,14 @@ class AIService {
   private serverUrl: string;
 
   constructor(serverUrl: string = AI_SERVER_URL) {
-    this.serverUrl = serverUrl;
+    this.serverUrl = normalizeServerUrl(serverUrl);
   }
 
   /**
    * Update the server URL (e.g., when user changes it in Settings)
    */
   setServerUrl(url: string) {
-    this.serverUrl = url;
+    this.serverUrl = normalizeServerUrl(url);
   }
 
   getServerUrl(): string {

@@ -1,0 +1,36 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_19-bb2b928f2fe766d71139475ef8474e07fc1ab238",
+  "solcVersion": "0.8.19",
+  "solcLongVersion": "0.8.19+commit.7dd6d404",
+  "compilerType": "solc",
+  "userSourceNameMap": {
+    "contracts/EvidenceStorage.sol": "project/contracts/EvidenceStorage.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "paris",
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/EvidenceStorage.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\ncontract EvidenceStorage {\n    struct EvidenceRecord {\n        string evidenceId;\n        string evidenceHash;\n        uint256 timestamp;\n        address officerAddress;\n    }\n\n    mapping(string => EvidenceRecord) public evidenceRecords;\n    mapping(string => bool) public evidenceExists;\n\n    event EvidenceStored(\n        string evidenceId,\n        string evidenceHash,\n        uint256 timestamp,\n        address officerAddress\n    );\n\n    function createEvidence(string memory _evidenceId, string memory _evidenceHash) public {\n        require(!evidenceExists[_evidenceId], \"Evidence already exists\");\n\n        evidenceRecords[_evidenceId] = EvidenceRecord({\n            evidenceId: _evidenceId,\n            evidenceHash: _evidenceHash,\n            timestamp: block.timestamp,\n            officerAddress: msg.sender\n        });\n\n        evidenceExists[_evidenceId] = true;\n\n        emit EvidenceStored(_evidenceId, _evidenceHash, block.timestamp, msg.sender);\n    }\n\n    function getEvidence(string memory _evidenceId) public view returns (\n        string memory,\n        string memory,\n        uint256,\n        address\n    ) {\n        require(evidenceExists[_evidenceId], \"Evidence does not exist\");\n\n        EvidenceRecord memory record = evidenceRecords[_evidenceId];\n        return (\n            record.evidenceId,\n            record.evidenceHash,\n            record.timestamp,\n            record.officerAddress\n        );\n    }\n\n    function verifyEvidence(string memory _evidenceId, string memory _hashToVerify) public view returns (bool) {\n        if (!evidenceExists[_evidenceId]) {\n            return false;\n        }\n\n        EvidenceRecord memory record = evidenceRecords[_evidenceId];\n        return keccak256(abi.encodePacked(record.evidenceHash)) == keccak256(abi.encodePacked(_hashToVerify));\n    }\n}"
+      }
+    }
+  }
+}
