@@ -5,8 +5,6 @@ import * as ImagePicker from 'expo-image-picker';
 import LocalFileStorageService from '../services/LocalFileStorageService';
 import FirebaseService from '../services/FirebaseService';
 import AIService from '../services/AIService';
-import BlynkService from '../services/BlynkService';
-import { BLYNK_CONFIG } from '../config/blynk.config';
 import { createEvidenceOnChain, hashDataUrl } from '../services/BlockchainService';
 
 export default function DocumentScanner() {
