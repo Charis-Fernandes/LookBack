@@ -45,6 +45,14 @@ export interface EvidenceItem {
   blockchainTxHash?: string;  // Blockchain transaction hash
   blockchainStored?: boolean; // Whether evidence is stored on blockchain
   blockchainEvidenceId?: string;
+  verificationStatus?: 'VERIFIED' | 'MISMATCH' | 'ERROR';
+  verificationMessage?: string;
+  verificationMode?: 'FIREBASE_VS_BLOCKCHAIN';
+  lastVerifiedAt?: number;
+  lastVerifiedOnChainHash?: string;
+  lastVerifiedFirebaseHash?: string;
+  lastVerifiedOfficerAddress?: string;
+  lastVerifiedOnChainTimestamp?: number;
 }
 
 // ─── AI-Processed Document Interfaces ──────────────────────

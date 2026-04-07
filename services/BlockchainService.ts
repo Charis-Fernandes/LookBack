@@ -16,6 +16,12 @@ export interface EvidenceVerificationResult {
   firebaseMatchesFreshHash: boolean;
 }
 
+export interface FirebaseBlockchainVerificationResult {
+  blockchainRecord: BlockchainEvidenceRecord;
+  firebaseFileHash: string;
+  blockchainMatchesFirebaseHash: boolean;
+}
+
 // Use environment variable or fallback to the deployed Ganache contract address
 const CONTRACT_ADDRESS = process.env.BLOCKCHAIN_CONTRACT_ADDRESS || '0x239d6BDcD109d796b791b4d1A7Bd8f7f2078F60A';
 const GANACHE_CHAIN_ID = (process.env.EXPO_PUBLIC_BLOCKCHAIN_CHAIN_ID || '0x539').toLowerCase();
@@ -235,6 +241,25 @@ export const verifyEvidenceRecord = async (
     firebaseMatchesFreshHash: firebaseFileHash
       ? normalizedFirebaseHash === normalizedFreshHash
       : false,
+  };
+};
+
+export const verifyEvidenceAgainstFirebaseHash = async (
+  evidenceId: string,
+  firebaseFileHash: string
+): Promise<FirebaseBlockchainVerificationResult> => {
+  if (!firebaseFileHash?.trim()) {
+    throw new Error('Firebase file hash is missing for this evidence.');
+  }
+
+  const blockchainRecord = await getEvidenceFromBlockchain(evidenceId);
+  const normalizedBlockchainHash = normalizeHash(blockchainRecord.evidenceHash);
+  const normalizedFirebaseHash = normalizeHash(firebaseFileHash);
+
+  return {
+    blockchainRecord,
+    firebaseFileHash: normalizedFirebaseHash,
+    blockchainMatchesFirebaseHash: normalizedBlockchainHash === normalizedFirebaseHash,
   };
 };
 

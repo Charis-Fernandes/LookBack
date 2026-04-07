@@ -20,7 +20,7 @@ import FirebaseService, {
   IDCardDocument,
   PoliceReportDocument,
 } from '../services/FirebaseService';
-import { verifyEvidenceRecord, blockchainContractConfig } from '../services/BlockchainService';
+import { verifyEvidenceAgainstFirebaseHash, blockchainContractConfig } from '../services/BlockchainService';
 
 type DocTypeFilter = 'ALL' | 'FIR' | 'ID_CARD' | 'POLICE_REPORT' | 'CHARGE_SHEET';
 
@@ -52,10 +52,9 @@ export default function EvidenceSearch() {
   const [firDetail, setFirDetail] = useState<FIRDocument | null>(null);
   const [idCardDetail, setIdCardDetail] = useState<IDCardDocument | null>(null);
   const [reportDetail, setReportDetail] = useState<PoliceReportDocument | null>(null);
+  const [selectedEvidence, setSelectedEvidence] = useState<EvidenceItem | null>(null);
   const [showImage, setShowImage] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState<Record<string, string>>({});
   const [verifying, setVerifying] = useState<Record<string, boolean>>({});
-  const [proofRecords, setProofRecords] = useState<Record<string, { blockchainRecord: any; freshFileHash: string }>>({});
 
   useEffect(() => { loadInitialData(); }, []);
   useEffect(() => { if (!initialLoad) performSearch(); }, [activeFilter, filterYear, filterMonth]);
@@ -117,6 +116,7 @@ export default function EvidenceSearch() {
     setFirDetail(null);
     setIdCardDetail(null);
     setReportDetail(null);
+    setSelectedEvidence(null);
     setShowImage(false);
     if (pdoc.typedDocId) {
       try {
@@ -137,6 +137,16 @@ export default function EvidenceSearch() {
         console.warn('Could not load typed detail:', error);
       }
     }
+
+    if (pdoc.evidenceId) {
+      try {
+        const evidence = await FirebaseService.getEvidenceById(pdoc.evidenceId);
+        setSelectedEvidence(evidence);
+      } catch (error) {
+        console.warn('Could not load evidence detail:', error);
+      }
+    }
+
     setShowDetailModal(true);
   };
 
@@ -173,53 +183,54 @@ export default function EvidenceSearch() {
 
   const handleVerify = async (pdoc: ProcessedDocument) => {
     const evidenceId = pdoc.evidenceId || '';
-    const imageUrl = pdoc.imageUrl || '';
 
     if (!evidenceId) {
       Alert.alert('Verification Unavailable', 'No linked evidence ID found for this document.');
       return;
     }
 
-    if (!imageUrl) {
-      Alert.alert('Verification Unavailable', 'No image URL available for this document.');
-      return;
-    }
-
     setVerifying((prev) => ({ ...prev, [evidenceId]: true }));
     try {
-      const evidence: EvidenceItem | null = await FirebaseService.getEvidenceById(evidenceId);
-      const storedHash = evidence?.fileHash || null;
+      const evidence: EvidenceItem | null = selectedEvidence || await FirebaseService.getEvidenceById(evidenceId);
+      const firebaseHash = evidence?.fileHash?.trim() || '';
 
-      const {
-        blockchainRecord,
-        freshFileHash,
-        blockchainMatchesFreshHash,
-        blockchainMatchesFirebaseHash,
-        firebaseMatchesFreshHash,
-      } = await verifyEvidenceRecord(evidenceId, storedHash, imageUrl);
+      if (!firebaseHash) {
+        throw new Error('Firebase file hash is missing for this evidence.');
+      }
 
-      setVerificationStatus((prev) => ({
-        ...prev,
-        [evidenceId]: blockchainMatchesFreshHash
-          ? `Verified: image hash matches blockchain (${freshFileHash.slice(0, 12)}...)`
-          : storedHash && firebaseMatchesFreshHash
-            ? `Warning: blockchain hash differs from Firebase hash (${blockchainRecord.evidenceHash.slice(0, 12)}...)`
-            : storedHash && blockchainMatchesFirebaseHash
-              ? `Warning: Firebase hash differs from current image (${freshFileHash.slice(0, 12)}...)`
-              : storedHash
-                ? 'Mismatch: blockchain, Firebase, and image hashes differ'
-                : 'Mismatch: on-chain hash does not match current image',
-      }));
+      const { blockchainRecord, blockchainMatchesFirebaseHash, firebaseFileHash } =
+        await verifyEvidenceAgainstFirebaseHash(evidenceId, firebaseHash);
 
-      setProofRecords((prev) => ({
-        ...prev,
-        [evidenceId]: { blockchainRecord, freshFileHash },
-      }));
+      const verificationStatus = blockchainMatchesFirebaseHash ? 'VERIFIED' : 'MISMATCH';
+      const verificationMessage = blockchainMatchesFirebaseHash
+        ? `Verified: Firebase hash matches blockchain (${firebaseFileHash.slice(0, 12)}...)`
+        : `Mismatch: Firebase hash does not match blockchain (${blockchainRecord.evidenceHash.slice(0, 12)}...)`;
+
+      await FirebaseService.updateEvidence(evidenceId, {
+        verificationStatus,
+        verificationMessage,
+        verificationMode: 'FIREBASE_VS_BLOCKCHAIN',
+        lastVerifiedAt: Date.now(),
+        lastVerifiedOnChainHash: blockchainRecord.evidenceHash,
+        lastVerifiedFirebaseHash: firebaseFileHash,
+        lastVerifiedOfficerAddress: blockchainRecord.officerAddress,
+        lastVerifiedOnChainTimestamp: blockchainRecord.timestamp,
+      });
+
+      const refreshedEvidence = await FirebaseService.getEvidenceById(evidenceId);
+      setSelectedEvidence(refreshedEvidence);
     } catch (error) {
-      setVerificationStatus((prev) => ({
-        ...prev,
-        [evidenceId]: `Could not verify: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      }));
+      const message = `Could not verify: ${error instanceof Error ? error.message : 'Unknown error'}`;
+
+      await FirebaseService.updateEvidence(evidenceId, {
+        verificationStatus: 'ERROR',
+        verificationMessage: message,
+        verificationMode: 'FIREBASE_VS_BLOCKCHAIN',
+        lastVerifiedAt: Date.now(),
+      });
+
+      const refreshedEvidence = await FirebaseService.getEvidenceById(evidenceId);
+      setSelectedEvidence(refreshedEvidence);
     } finally {
       setVerifying((prev) => ({ ...prev, [evidenceId]: false }));
     }
@@ -687,30 +698,30 @@ export default function EvidenceSearch() {
                         </Text>
                       </TouchableOpacity>
 
-                      {verificationStatus[selectedDoc.evidenceId] && (
+                      {selectedEvidence?.verificationMessage && (
                         <Text
                           style={[
                             styles.verificationStatus,
-                            verificationStatus[selectedDoc.evidenceId].startsWith('Verified') && styles.statusValid,
-                            verificationStatus[selectedDoc.evidenceId].startsWith('Mismatch') && styles.statusInvalid,
-                            verificationStatus[selectedDoc.evidenceId].startsWith('Warning') && styles.statusWarning,
+                            selectedEvidence.verificationStatus === 'VERIFIED' && styles.statusValid,
+                            selectedEvidence.verificationStatus === 'MISMATCH' && styles.statusInvalid,
+                            selectedEvidence.verificationStatus === 'ERROR' && styles.statusWarning,
                           ]}
                         >
-                          {verificationStatus[selectedDoc.evidenceId]}
+                          {selectedEvidence.verificationMessage}
                         </Text>
                       )}
 
-                      {proofRecords[selectedDoc.evidenceId] && (
+                      {selectedEvidence?.lastVerifiedOnChainTimestamp && selectedEvidence?.lastVerifiedOfficerAddress && selectedEvidence?.lastVerifiedOnChainHash && (
                         <View style={styles.blockchainProof}>
                           <Text style={styles.fieldLabel}>ON-CHAIN PROOF</Text>
                           <Text style={styles.sectionDetailText}>
-                            Timestamp: {new Date(proofRecords[selectedDoc.evidenceId].blockchainRecord.timestamp * 1000).toLocaleString()}
+                            Timestamp: {new Date(selectedEvidence.lastVerifiedOnChainTimestamp * 1000).toLocaleString()}
                           </Text>
                           <Text style={styles.sectionDetailText}>
-                            Officer: {proofRecords[selectedDoc.evidenceId].blockchainRecord.officerAddress}
+                            Officer: {selectedEvidence.lastVerifiedOfficerAddress}
                           </Text>
                           <Text style={styles.sectionDetailText}>
-                            Hash: {proofRecords[selectedDoc.evidenceId].blockchainRecord.evidenceHash.slice(0, 20)}...
+                            Hash: {selectedEvidence.lastVerifiedOnChainHash.slice(0, 20)}...
                           </Text>
                         </View>
                       )}
