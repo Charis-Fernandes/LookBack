@@ -1,4 +1,9 @@
-[
+// src/utils/blockchain-config.js
+
+export const CONTRACT_ADDRESS = "0x7a79533a65929c9cD62923f49306969449a5FE8E";
+
+export const CONTRACT_ABI = [
+  
 	{
 		"anonymous": false,
 		"inputs": [
@@ -106,4 +111,5 @@
 		"stateMutability": "view",
 		"type": "function"
 	}
-]
+
+];

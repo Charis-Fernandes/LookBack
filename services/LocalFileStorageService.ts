@@ -59,7 +59,7 @@ class LocalFileStorageService {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(limited));
 
       console.log('✅ Snapshot saved locally:', id);
-      return imageData; // Return the data URI for display
+      return id; // Return the snapshot ID for later reference
     } catch (error) {
       console.error('❌ Local save error:', error);
       throw error;

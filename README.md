@@ -88,6 +88,36 @@ npm run web
 - **TypeScript** - Type-safe development
 - **Expo** - Development platform
 - **React Native WebView** - For live stream display
+- **Firebase** - Backend services and data storage
+- **UploadThing** - File upload and storage
+- **Blockchain (Ethereum)** - Evidence integrity and verification
+- **MetaMask** - Wallet integration for blockchain transactions
+- **Ethers.js** - Ethereum blockchain interaction
+
+## 🔗 Blockchain Integration
+
+LookBack includes blockchain integration for evidence integrity verification:
+
+### Features
+- **SHA-256 Hashing**: All uploaded images are hashed for integrity verification
+- **Blockchain Storage**: Evidence hashes are stored on Ethereum blockchain
+- **Tamper Detection**: Compare stored hashes with current file hashes
+- **Audit Trail**: Immutable record of evidence creation with timestamps
+
+### Setup
+1. Install and run [Ganache](https://trufflesuite.com/ganache/) for local blockchain
+2. Install [MetaMask](https://metamask.io/) browser extension
+3. Deploy the smart contract from `contracts/EvidenceStorage.sol`
+4. Configure MetaMask to connect to Ganache network
+5. Update contract address in `services/BlockchainService.ts`
+
+See `BLOCKCHAIN_SETUP.md` for detailed instructions.
+
+### Testing
+Run the blockchain integration test:
+```bash
+node test-blockchain.js
+```
 
 ## 📝 Notes
 

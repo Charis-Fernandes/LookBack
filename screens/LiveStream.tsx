@@ -14,6 +14,7 @@ import BlynkService from '../services/BlynkService';
 import { BLYNK_CONFIG } from '../config/blynk.config';
 import LocalFileStorageService from '../services/LocalFileStorageService';
 import FirebaseService from '../services/FirebaseService';
+import { createEvidenceOnChain, hashDataUrl } from '../services/BlockchainService';
 
 export default function LiveStream() {
   const [streamUrl, setStreamUrl] = useState('http://10.145.212.207:81/stream');
@@ -150,6 +151,8 @@ export default function LiveStream() {
         reader.onerror = reject;
       });
 
+      const fileHash = hashDataUrl(dataUrl);
+
       // Save to local storage
       console.log('💾 Saving to local storage...');
       await LocalFileStorageService.saveSnapshot(dataUrl, {
@@ -160,13 +163,38 @@ export default function LiveStream() {
 
       // Save metadata to Firestore
       console.log('☁️ Saving metadata to Firestore...');
-      await FirebaseService.saveEvidence({
+      const evidenceId = await FirebaseService.saveEvidence({
         imageUrl: dataUrl,
         timestamp: Date.now(),
         deviceId: 'esp32-cam',
         quality: streamQuality,
         streamUrl: streamUrl,
+        category: 'snapshot',
+        fileHash,
+        blockchainStored: false,
       }).catch(err => console.warn('Firestore save warning:', err));
+
+      // ── BLOCKCHAIN INTEGRATION: Store evidence hash on-chain ──
+      if (evidenceId) {
+        try {
+          console.log('🔗 Storing evidence on blockchain...');
+
+          const txHash = await createEvidenceOnChain(evidenceId, fileHash);
+          
+          // Update Firestore with blockchain data
+          await FirebaseService.updateEvidence(evidenceId, {
+            fileHash,
+            blockchainTxHash: txHash,
+            blockchainStored: true,
+            blockchainEvidenceId: evidenceId,
+          });
+          
+          console.log('✅ Evidence secured on blockchain:', txHash);
+        } catch (blockchainError) {
+          console.warn('⚠️ Blockchain storage failed:', blockchainError);
+          // Continue with upload even if blockchain fails
+        }
+      }
 
       // Log to Blynk
       blynkService.logEvent('SNAPSHOT_CAPTURED', 'Snapshot saved locally');

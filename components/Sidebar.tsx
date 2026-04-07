@@ -8,6 +8,7 @@ interface SidebarProps {
 
 const menuItems = [
   { id: 'evidenceSearch', label: 'EVIDENCE SEARCH', icon: '🔍' },
+  { id: 'evidenceVault', label: 'EVIDENCE VAULT', icon: '📁' },
   { id: 'documentScanner', label: 'DOCUMENT SCANNER', icon: '📄' },
   { id: 'liveStream', label: 'LIVE STREAM', icon: '📹' },
   { id: 'analytics', label: 'ANALYTICS & REPORTS', icon: '📊' },
