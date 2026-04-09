@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
+  Platform,
   View,
   Text,
   StyleSheet,
@@ -14,17 +15,44 @@ import LocalFileStorageService from '../services/LocalFileStorageService';
 import FirebaseService from '../services/FirebaseService';
 import { createEvidenceOnChain, hashDataUrl } from '../services/BlockchainService';
 
+const DEFAULT_STREAM_URL = 'http://10.57.121.241:81';
+
+const normalizeStreamBaseUrl = (url: string) =>
+  url.replace(/\/(stream|mjpeg|snapshot|capture)\/?$/, '').replace(/\/$/, '');
+
 export default function LiveStream() {
-  const [streamUrl, setStreamUrl] = useState('http://10.145.212.207:81/stream');
-  const [tempUrl, setTempUrl] = useState('http://10.145.212.207:81/stream');
+  const [streamUrl, setStreamUrl] = useState(DEFAULT_STREAM_URL);
+  const [tempUrl, setTempUrl] = useState(DEFAULT_STREAM_URL);
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
+  const [streamReloadToken, setStreamReloadToken] = useState(0);
   const [isCaptureLoading, setIsCaptureLoading] = useState(false);
   const [streamQuality, setStreamQuality] = useState<'SD' | 'HD' | 'FHD'>('HD');
   const [showQualityModal, setShowQualityModal] = useState(false);
   const webViewRef = useRef<WebView>(null);
+  const streamSourceUrl = normalizeStreamBaseUrl(streamUrl);
+  const liveStreamEndpoint = `${streamSourceUrl}/stream`;
+  const liveStreamUrlWithToken = `${liveStreamEndpoint}?t=${streamReloadToken}`;
+
+  const webImageStyle: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    backgroundColor: '#000000',
+    transform: 'rotate(90deg)',
+    transformOrigin: 'center center',
+  };
+
+  useEffect(() => {
+    console.log('[LiveStream] init', {
+      platform: Platform.OS,
+      streamUrl,
+      streamSourceUrl,
+      liveStreamEndpoint,
+    });
+  }, [liveStreamEndpoint, streamSourceUrl, streamUrl]);
 
   useEffect(() => {
     if (!isConnected && retryCount > 0 && retryCount < 5) {
@@ -36,30 +64,68 @@ export default function LiveStream() {
   }, [isConnected, retryCount]);
 
   const handleReload = () => {
+    console.log('[LiveStream] reload requested', {
+      platform: Platform.OS,
+      streamUrl,
+      streamSourceUrl,
+      liveStreamEndpoint,
+      liveStreamUrlWithToken,
+      retryCount,
+    });
     setIsLoading(true);
     setRetryCount(prev => prev + 1);
+    setStreamReloadToken(prev => prev + 1);
     if (webViewRef.current) {
       webViewRef.current.reload();
     }
   };
 
   const handleLoadStart = () => {
+    console.log('[LiveStream] load start', {
+      platform: Platform.OS,
+      streamUrl,
+      streamSourceUrl,
+      liveStreamEndpoint,
+      liveStreamUrlWithToken,
+    });
     setIsLoading(true);
   };
 
   const handleLoadEnd = () => {
+    console.log('[LiveStream] load end', {
+      platform: Platform.OS,
+      streamUrl,
+      streamSourceUrl,
+      liveStreamEndpoint,
+      liveStreamUrlWithToken,
+    });
     setIsLoading(false);
     setIsConnected(true);
     setRetryCount(0);
   };
 
-  const handleError = () => {
+  const handleError = (error?: unknown) => {
+    console.warn('[LiveStream] load error', {
+      platform: Platform.OS,
+      streamUrl,
+      streamSourceUrl,
+      liveStreamEndpoint,
+      liveStreamUrlWithToken,
+      error,
+    });
     setIsLoading(false);
     setIsConnected(false);
   };
 
   const handleUrlChange = () => {
-    setStreamUrl(tempUrl);
+    const normalizedUrl = normalizeStreamBaseUrl(tempUrl);
+    console.log('[LiveStream] url changed', {
+      previous: streamUrl,
+      input: tempUrl,
+      normalizedUrl,
+    });
+    setStreamUrl(normalizedUrl);
+    setTempUrl(normalizedUrl);
     setShowUrlModal(false);
     setRetryCount(0);
     handleReload();
@@ -73,9 +139,16 @@ export default function LiveStream() {
 
     try {
       setIsCaptureLoading(true);
+      console.log('[LiveStream] capture requested', {
+        platform: Platform.OS,
+        streamUrl,
+        streamSourceUrl,
+        liveStreamEndpoint,
+        liveStreamUrlWithToken,
+      });
 
       // Capture snapshot from ESP32-CAM - use base URL with /capture
-      const baseUrl = streamUrl.replace(':81/stream', '');
+      const baseUrl = streamSourceUrl;
       const captureUrl = `${baseUrl}/capture`;
       console.log('📸 Capturing from:', captureUrl);
 
@@ -142,8 +215,6 @@ export default function LiveStream() {
       }
 
       // Log to Blynk
-      blynkService.logEvent('SNAPSHOT_CAPTURED', 'Snapshot saved locally');
-      blynkService.sendNotification('📸 Snapshot captured and saved!');
 
       Alert.alert(
         '✅ Success',
@@ -169,106 +240,6 @@ export default function LiveStream() {
     setShowQualityModal(false);
   };
 
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body {
-            background-color: #f1f5f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow: hidden;
-          }
-          #stream-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-          }
-          #videoStream {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-          }
-          .error-message {
-            color: #ef4444;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
-          }
-          #mjpeg-stream {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            transform: rotate(-90deg);
-          }
-        </style>
-      </head>
-      <body>
-        <div id="stream-container">
-          <!-- ESP32-CAM stream -->
-          <img id="mjpeg-stream" 
-               src="${streamUrl}" 
-               onerror="this.style.display='none'; document.getElementById('error').style.display='block';"
-               style="display: block;"
-          />
-          <div id="error" class="error-message" style="display: none;">
-            <h2>⚠️ Stream Unavailable</h2>
-            <p>Unable to connect to the video stream.</p>
-          </div>
-        </div>
-        <script>
-          // Try different streaming methods
-          const video = document.getElementById('videoStream');
-          const mjpegStream = document.getElementById('mjpeg-stream');
-          const errorDiv = document.getElementById('error');
-          
-          function tryFallbackStream() {
-            // Try MJPEG stream
-            mjpegStream.src = "${streamUrl}/mjpeg";
-            mjpegStream.style.display = 'block';
-            
-            mjpegStream.onerror = function() {
-              // If MJPEG fails, try snapshot mode
-              mjpegStream.src = "${streamUrl}/snapshot";
-              mjpegStream.style.display = 'block';
-              
-              // Refresh snapshot every second
-              setInterval(() => {
-                if (mjpegStream.style.display !== 'none') {
-                  mjpegStream.src = "${streamUrl}/snapshot?t=" + new Date().getTime();
-                }
-              }, 1000);
-              
-              mjpegStream.onerror = function() {
-                mjpegStream.style.display = 'none';
-                errorDiv.style.display = 'block';
-              }
-            }
-          }
-          
-          video.addEventListener('loadeddata', function() {
-            video.style.display = 'block';
-          });
-          
-          video.addEventListener('error', function() {
-            video.style.display = 'none';
-            mjpegStream.style.display = 'block';
-          });
-          
-          // Start with video stream
-          video.style.display = 'block';
-        </script>
-      </body>
-    </html>
-  `;
-
   return (
     <View style={styles.container}>
       {/* URL Configuration Modal */}
@@ -288,7 +259,7 @@ export default function LiveStream() {
               style={styles.urlInput}
               value={tempUrl}
               onChangeText={setTempUrl}
-              placeholder="http://10.56.141.207:81/stream"
+              placeholder="http://10.57.121.241:81"
               placeholderTextColor="#94a3b8"
               autoCapitalize="none"
               autoCorrect={false}
@@ -350,7 +321,7 @@ export default function LiveStream() {
       </View>
 
       {/* Stream Container */}
-      <View style={styles.streamContainer}>
+      <View style={[styles.streamContainer, Platform.OS === 'web' && styles.streamContainerWeb]}>
         {isLoading && (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color="#475569" />
@@ -360,21 +331,32 @@ export default function LiveStream() {
             )}
           </View>
         )}
-        
-        <WebView
-          ref={webViewRef}
-          source={{ html: htmlContent }}
-          style={styles.webview}
-          onLoadStart={handleLoadStart}
-          onLoadEnd={handleLoadEnd}
-          onError={handleError}
-          scrollEnabled={false}
-          bounces={false}
-          allowsInlineMediaPlayback={true}
-          mediaPlaybackRequiresUserAction={false}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-        />
+
+        {Platform.OS === 'web' ? (
+          <img
+            key={`${liveStreamUrlWithToken}-${retryCount}`}
+            src={liveStreamUrlWithToken}
+            style={webImageStyle}
+            onLoad={handleLoadEnd}
+            onError={handleError}
+            alt="Live stream"
+          />
+        ) : (
+          <WebView
+            ref={webViewRef}
+            source={{ uri: liveStreamEndpoint }}
+            style={styles.webview}
+            onLoadStart={handleLoadStart}
+            onLoadEnd={handleLoadEnd}
+            onError={handleError}
+            scrollEnabled={false}
+            bounces={false}
+            allowsInlineMediaPlayback={true}
+            mediaPlaybackRequiresUserAction={false}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+          />
+        )}
         
         {/* Overlay Overlay Crosshair for Tactical look */}
         <View style={styles.crosshairContainer} pointerEvents="none">
@@ -581,6 +563,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 2,
     borderColor: '#1e293b',
+  },
+  streamContainerWeb: {
+    height: 380,
+    minHeight: 320,
+    width: '100%',
+    flexGrow: 0,
+    flexShrink: 0,
   },
   webview: {
     flex: 1,

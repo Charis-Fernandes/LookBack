@@ -17,7 +17,7 @@ const { width, height } = Dimensions.get('window');
 
 export default function AdminDashboard() {
   // Configurable stream URL - change this to your server URL
-  const [streamUrl, setStreamUrl] = useState('http://10.237.147.207');
+  const [streamUrl, setStreamUrl] = useState('http://10.57.121.241');
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);

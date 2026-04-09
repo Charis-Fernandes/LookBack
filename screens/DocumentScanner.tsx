@@ -8,8 +8,8 @@ import AIService from '../services/AIService';
 import { createEvidenceOnChain, hashDataUrl } from '../services/BlockchainService';
 
 export default function DocumentScanner() {
-  const [streamUrl, setStreamUrl] = useState('http://10.145.212.207:81/stream');
-  const [tempUrl, setTempUrl] = useState('http://10.145.212.207:81/stream');
+  const [streamUrl, setStreamUrl] = useState('http://10.57.121.241:81/stream');
+  const [tempUrl, setTempUrl] = useState('http://10.57.121.241:81/stream');
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanCount, setScanCount] = useState<number>(0);
