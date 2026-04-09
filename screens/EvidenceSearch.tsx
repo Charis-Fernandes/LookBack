@@ -98,7 +98,7 @@ export default function EvidenceSearch() {
           d.textPreview?.toLowerCase().includes(term) ||
           d.title?.toLowerCase().includes(term) ||
           d.subtitle?.toLowerCase().includes(term) ||
-          d.searchKeywords?.some(k => k.includes(term))
+          d.searchKeywords?.some((k: string) => k.includes(term))
         );
       }
       setResults(docs);
@@ -122,15 +122,15 @@ export default function EvidenceSearch() {
       try {
         if (pdoc.docType === 'FIR') {
           const firs = await FirebaseService.listFIRs(100);
-          const found = firs.find(f => f.id === pdoc.typedDocId);
+          const found = firs.find((f: FIRDocument) => f.id === pdoc.typedDocId);
           if (found) setFirDetail(found);
         } else if (pdoc.docType === 'ID_CARD') {
           const cards = await FirebaseService.listIDCards(100);
-          const found = cards.find(c => c.id === pdoc.typedDocId);
+          const found = cards.find((c: IDCardDocument) => c.id === pdoc.typedDocId);
           if (found) setIdCardDetail(found);
         } else if (pdoc.docType === 'POLICE_REPORT' || pdoc.docType === 'CHARGE_SHEET') {
           const reports = await FirebaseService.listPoliceReports(100);
-          const found = reports.find(r => r.id === pdoc.typedDocId);
+          const found = reports.find((r: PoliceReportDocument) => r.id === pdoc.typedDocId);
           if (found) setReportDetail(found);
         }
       } catch (error) {
@@ -585,9 +585,9 @@ export default function EvidenceSearch() {
                       {firDetail.sectionDescriptions && Object.keys(firDetail.sectionDescriptions).length > 0 && (
                         <View style={{ marginTop: 8 }}>
                           <Text style={styles.fieldLabel}>SECTION DETAILS</Text>
-                          {Object.entries(firDetail.sectionDescriptions).map(([sec, desc]) => (
+                          {Object.entries(firDetail.sectionDescriptions).map(([sec, desc]: [string, string]) => (
                             <Text key={sec} style={styles.sectionDetailText}>
-                              {'\u2022'} {sec}: {desc}
+                              {'\u2022'} {sec}: {String(desc)}
                             </Text>
                           ))}
                         </View>
@@ -625,8 +625,8 @@ export default function EvidenceSearch() {
                   {selectedDoc.keyFields && Object.keys(selectedDoc.keyFields).length > 0 && !firDetail && !idCardDetail && !reportDetail && (
                     <View style={styles.detailCard}>
                       <Text style={styles.detailCardTitle}>{'\u{1F4CA}'} EXTRACTED INFORMATION</Text>
-                      {Object.entries(selectedDoc.keyFields).map(([k, v]) => (
-                        <DetailField key={k} label={k.replace(/_/g, ' ')} value={v} />
+                      {Object.entries(selectedDoc.keyFields).map(([k, v]: [string, string]) => (
+                        <DetailField key={k} label={k.replace(/_/g, ' ')} value={String(v)} />
                       ))}
                     </View>
                   )}
@@ -636,7 +636,7 @@ export default function EvidenceSearch() {
                     <View style={styles.detailCard}>
                       <Text style={styles.detailCardTitle}>{'\u{1F50E}'} DETECTED OBJECTS</Text>
                       <View style={styles.tagRow}>
-                        {selectedDoc.detectedObjects.map((obj, idx) => (
+                        {selectedDoc.detectedObjects.map((obj: string, idx: number) => (
                           <View key={idx} style={styles.tag}>
                             <Text style={styles.tagText}>{obj}</Text>
                           </View>

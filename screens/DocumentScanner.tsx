@@ -235,7 +235,7 @@ export default function DocumentScanner() {
       fileHash,
       blockchainStored: false,
       blockchainEvidenceId: snapshotId,
-    }, snapshotId).catch(err => {
+    }, snapshotId).catch((err: unknown) => {
       console.warn('Firestore save warning:', err);
       return '';
     });
@@ -318,7 +318,7 @@ export default function DocumentScanner() {
             imageUrl: dataUrl,
             timestamp: Date.now(),
             deviceId,
-          }).catch(err => { console.warn('Save FIR warning:', err); return ''; });
+          }).catch((err: unknown) => { console.warn('Save FIR warning:', err); return ''; });
         } else if (docType === 'ID_CARD') {
           typedDocId = await FirebaseService.saveIDCard({
             evidenceId: evidenceId || '',
@@ -331,7 +331,7 @@ export default function DocumentScanner() {
             imageUrl: dataUrl,
             timestamp: Date.now(),
             deviceId,
-          }).catch(err => { console.warn('Save ID Card warning:', err); return ''; });
+          }).catch((err: unknown) => { console.warn('Save ID Card warning:', err); return ''; });
         } else if (docType === 'POLICE_REPORT' || docType === 'CHARGE_SHEET') {
           typedDocId = await FirebaseService.savePoliceReport({
             evidenceId: evidenceId || '',
@@ -345,7 +345,7 @@ export default function DocumentScanner() {
             imageUrl: dataUrl,
             timestamp: Date.now(),
             deviceId,
-          }).catch(err => { console.warn('Save Police Report warning:', err); return ''; });
+          }).catch((err: unknown) => { console.warn('Save Police Report warning:', err); return ''; });
         }
 
         // Build search index + title
@@ -380,7 +380,7 @@ export default function DocumentScanner() {
           title,
           subtitle,
           keyFields,
-        }).catch(err => console.warn('Save processed doc warning:', err));
+        }).catch((err: unknown) => console.warn('Save processed doc warning:', err));
 
         // Log analytics
         FirebaseService.logAnalyticsEvent('document_processed', {

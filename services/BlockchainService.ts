@@ -22,8 +22,11 @@ export interface FirebaseBlockchainVerificationResult {
   blockchainMatchesFirebaseHash: boolean;
 }
 
-// Use environment variable or fallback to the deployed Ganache contract address
-const CONTRACT_ADDRESS = process.env.BLOCKCHAIN_CONTRACT_ADDRESS || '0x239d6BDcD109d796b791b4d1A7Bd8f7f2078F60A';
+// Use Expo public env first for client runtime, then private env fallback.
+const CONTRACT_ADDRESS =
+  process.env.EXPO_PUBLIC_BLOCKCHAIN_CONTRACT_ADDRESS ||
+  process.env.BLOCKCHAIN_CONTRACT_ADDRESS ||
+  '0x239d6BDcD109d796b791b4d1A7Bd8f7f2078F60A';
 const GANACHE_CHAIN_ID = (process.env.EXPO_PUBLIC_BLOCKCHAIN_CHAIN_ID || '0x539').toLowerCase();
 const GANACHE_RPC_URL = process.env.EXPO_PUBLIC_BLOCKCHAIN_RPC_URL || 'http://127.0.0.1:7545';
 

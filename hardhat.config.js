@@ -1,5 +1,6 @@
 /** @type import('hardhat/config').HardhatUserConfig */
-const ganachePrivateKey = '0x61fff5cf6675aa85e45df1ad220c4754e418a6a4ce19e54ed349112f550da285';
+const ganachePrivateKey = process.env.GANACHE_PRIVATE_KEY || '';
+const ganacheRpcUrl = process.env.GANACHE_RPC_URL || 'http://127.0.0.1:7545';
 
 if (!ganachePrivateKey) {
   console.warn(
@@ -12,7 +13,7 @@ const config = {
   networks: {
     ganache: {
       type: "http",
-      url: "http://127.0.0.1:7545",
+      url: ganacheRpcUrl,
       accounts: ganachePrivateKey ? [ganachePrivateKey] : []
     }
   }

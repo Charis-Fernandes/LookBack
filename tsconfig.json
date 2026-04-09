@@ -2,7 +2,7 @@
   "compilerOptions": {
     "strict": true,
     "target": "esnext",
-    "module": "node16",
+    "module": "esnext",
     "jsx": "react-native",
     "lib": [
       "es2017"
@@ -11,7 +11,7 @@
     "skipLibCheck": true,
     "noEmit": true,
     "isolatedModules": true,
-    "moduleResolution": "node16",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "esModuleInterop": true
   },

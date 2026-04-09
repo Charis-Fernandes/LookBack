@@ -41,7 +41,7 @@ try {
 
 // Test 4: Check contract configuration
 console.log('\n4. Testing contract configuration...');
-const CONTRACT_ADDRESS = '0x7a79533a65929c9cD62923f49306969449a5FE8E';
+const CONTRACT_ADDRESS = '0x403c6a137E3bbFd27A9deDBF01b43290B8b222B4';
 console.log('   Contract address:', CONTRACT_ADDRESS);
 console.log('   ✅ Contract address configured');
 
