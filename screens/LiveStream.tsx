@@ -14,6 +14,9 @@ import { WebView } from 'react-native-webview';
 import LocalFileStorageService from '../services/LocalFileStorageService';
 import FirebaseService from '../services/FirebaseService';
 import { createEvidenceOnChain, hashDataUrl } from '../services/BlockchainService';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { storage } from '../config/firebase.config';
+import UserProfileService from '../services/UserProfileService';
 
 const DEFAULT_STREAM_URL = 'http://10.57.121.241:81';
 
@@ -32,9 +35,28 @@ export default function LiveStream() {
   const [streamQuality, setStreamQuality] = useState<'SD' | 'HD' | 'FHD'>('HD');
   const [showQualityModal, setShowQualityModal] = useState(false);
   const webViewRef = useRef<WebView>(null);
+  const hasLoggedConnectionRef = useRef(false);
   const streamSourceUrl = normalizeStreamBaseUrl(streamUrl);
   const liveStreamEndpoint = `${streamSourceUrl}/stream`;
   const liveStreamUrlWithToken = `${liveStreamEndpoint}?t=${streamReloadToken}`;
+
+  const uploadSnapshotToFirebase = async (dataUrl: string) => {
+    const dataResponse = await fetch(dataUrl);
+    const blob = await dataResponse.blob();
+    const extension = (blob.type || '').includes('png') ? 'png' : 'jpg';
+    const filePath = `evidence_snapshots/livestream/${Date.now()}-${Math.random().toString(36).slice(2)}.${extension}`;
+    const fileRef = ref(storage, filePath);
+
+    await uploadBytes(fileRef, blob, {
+      contentType: blob.type || 'image/jpeg',
+      customMetadata: {
+        source: 'live-stream',
+        platform: Platform.OS,
+      },
+    });
+
+    return getDownloadURL(fileRef);
+  };
 
   const webImageStyle: React.CSSProperties = {
     width: '100%',
@@ -62,6 +84,26 @@ export default function LiveStream() {
       return () => clearTimeout(timer);
     }
   }, [isConnected, retryCount]);
+
+  useEffect(() => {
+    const logEspConnection = async () => {
+      if (!isConnected || hasLoggedConnectionRef.current) return;
+      hasLoggedConnectionRef.current = true;
+
+      const actor = await UserProfileService.getAuditIdentity();
+      await FirebaseService.logAccess({
+        userId: actor.userId,
+        userName: actor.userName,
+        action: 'ESP32-CAM connected',
+        resource: streamSourceUrl,
+        timestamp: Date.now(),
+      });
+    };
+
+    logEspConnection().catch((error) => {
+      console.warn('[LiveStream] failed to log ESP connection', error);
+    });
+  }, [isConnected, streamSourceUrl]);
 
   const handleReload = () => {
     console.log('[LiveStream] reload requested', {
@@ -179,10 +221,16 @@ export default function LiveStream() {
         streamUrl: streamUrl,
       });
 
+      // Upload image to Firebase Storage and keep public URL in evidence metadata
+      console.log('☁️ Uploading snapshot image to Firebase Storage...');
+      const firebaseImageUrl = await uploadSnapshotToFirebase(dataUrl);
+      console.log('✅ Firebase Storage upload complete:', firebaseImageUrl);
+
       // Save metadata to Firestore
       console.log('☁️ Saving metadata to Firestore...');
       const evidenceId = await FirebaseService.saveEvidence({
-        imageUrl: dataUrl,
+        imageUrl: firebaseImageUrl,
+        thumbnailUrl: firebaseImageUrl,
         timestamp: Date.now(),
         deviceId: 'esp32-cam',
         quality: streamQuality,

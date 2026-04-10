@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   View, 
   Text,
@@ -15,6 +15,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { ethers } from 'ethers';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import FirebaseService from './services/FirebaseService';
 
 // Components
 import Sidebar from './components/Sidebar';
@@ -26,9 +27,9 @@ import DocumentScanner from './screens/DocumentScanner';
 import EvidenceSearch from './screens/EvidenceSearch';
 import EvidenceVault from './screens/EvidenceVault';
 import AccessLogs from './screens/AccessLogs';
-import UserCaseManagement from './screens/UserCaseManagement';
 import AnalyticsReports from './screens/AnalyticsReports';
 import Settings from './screens/Settings';
+import UserProfileService, { UserProfile } from './services/UserProfileService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SIDEBAR_WIDTH = 280;
@@ -48,7 +49,7 @@ const screenTitles: Record<ScreenId, string> = {
   documentScanner: 'Document Scanner',
   liveStream: 'Live Stream',
   analytics: 'Analytics & Reports',
-  userLogs: 'User Logs & Management',
+  userLogs: 'Access Logs',
   settings: 'Settings',
 };
 
@@ -61,6 +62,7 @@ export default function App() {
   const [walletError, setWalletError] = useState<string | null>(null);
   const [walletDebug, setWalletDebug] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
+  const [profile, setProfile] = useState<UserProfile>({});
 
   const isWeb = Platform.OS === 'web';
 
@@ -81,7 +83,17 @@ export default function App() {
   const fetchCachedAddress = async () => {
     try {
       const cached = await AsyncStorage.getItem('walletAddress');
-      if (cached) setWalletAddress(cached);
+      if (!cached) return;
+
+      const isBlocked = await FirebaseService.isUserLoginBlocked(cached);
+      if (isBlocked) {
+        setWalletAddress(null);
+        setWalletError('This wallet is blocked by an administrator.');
+        await AsyncStorage.removeItem('walletAddress');
+        return;
+      }
+
+      setWalletAddress(cached);
     } catch {
       // ignore
     }
@@ -90,6 +102,15 @@ export default function App() {
   useEffect(() => {
     fetchCachedAddress();
   }, []);
+
+  const loadProfile = useCallback(async () => {
+    const data = await UserProfileService.getProfile();
+    setProfile(data);
+  }, []);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   useEffect(() => {
     if (!isWeb) return;
@@ -107,7 +128,16 @@ export default function App() {
         ]);
 
         if (accounts?.[0]) {
-          setWalletAddress(accounts[0]);
+          const account = accounts[0];
+          const isBlocked = await FirebaseService.isUserLoginBlocked(account);
+          if (isBlocked) {
+            setWalletAddress(null);
+            setWalletError('This wallet is blocked by an administrator.');
+            await AsyncStorage.removeItem('walletAddress');
+            return;
+          }
+
+          setWalletAddress(account);
         }
 
         if (currentChainId) {
@@ -121,11 +151,49 @@ export default function App() {
     syncWalletState();
   }, [isWeb]);
 
+  useEffect(() => {
+    if (!walletAddress) return;
+
+    let cancelled = false;
+    const enforceBlockedWallet = async () => {
+      try {
+        const isBlocked = await FirebaseService.isUserLoginBlocked(walletAddress);
+        if (!isBlocked || cancelled) return;
+
+        setWalletAddress(null);
+        setWalletDebug('Wallet blocked by administrator');
+        setWalletError('This wallet is blocked by an administrator.');
+        await AsyncStorage.removeItem('walletAddress');
+      } catch (error) {
+        console.warn('Blocked wallet check failed:', error);
+      }
+    };
+
+    enforceBlockedWallet();
+    const timer = setInterval(enforceBlockedWallet, 10000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [walletAddress]);
+
   const disconnectWallet = async () => {
+    const disconnectedAddress = walletAddress;
     setWalletAddress(null);
     setWalletError(null);
     setWalletDebug('Wallet disconnected');
     await AsyncStorage.removeItem('walletAddress');
+
+    if (disconnectedAddress) {
+      const actor = await UserProfileService.getAuditIdentity();
+      await FirebaseService.logAccess({
+        userId: disconnectedAddress,
+        userName: actor.userName,
+        action: 'MetaMask logout',
+        resource: `Chain ${chainId || 'unknown'}`,
+        timestamp: Date.now(),
+      });
+    }
   };
 
   const connectWallet = async () => {
@@ -151,10 +219,24 @@ export default function App() {
       const signer = await provider.getSigner();
       const address = await signer.getAddress();
 
+      const isBlocked = await FirebaseService.isUserLoginBlocked(address);
+      if (isBlocked) {
+        throw new Error('This wallet is blocked by an administrator.');
+      }
+
       setWalletAddress(address);
       setChainId(currentChainId ?? null);
       setWalletDebug(`Connected: ${accounts?.[0] || address}`);
       await AsyncStorage.setItem('walletAddress', address);
+
+      const actor = await UserProfileService.getAuditIdentity();
+      await FirebaseService.logAccess({
+        userId: address,
+        userName: actor.userName,
+        action: 'MetaMask login',
+        resource: `Chain ${currentChainId || 'unknown'}`,
+        timestamp: Date.now(),
+      });
     } catch (error: any) {
       setWalletError(error?.message ?? 'Wallet connection failed');
       setWalletDebug(error?.code ? `MetaMask error code: ${error.code}` : 'Wallet connection failed');
@@ -180,14 +262,9 @@ export default function App() {
       case 'analytics':
         return <AnalyticsReports />;
       case 'userLogs':
-        return (
-          <ScrollView style={{ flex: 1 }}>
-             <UserCaseManagement />
-             <AccessLogs />
-          </ScrollView>
-        );
+        return <AccessLogs />;
       case 'settings':
-        return <Settings />;
+        return <Settings onProfileSaved={loadProfile} />;
       default:
         return <EvidenceSearch />;
     }
@@ -348,6 +425,8 @@ export default function App() {
             title={screenTitles[activeScreen]} 
             onMenuPress={toggleSidebar}
             walletAddress={walletAddress}
+            displayName={profile.name || ''}
+            photoUrl={profile.photoUrl || ''}
             onLogout={disconnectWallet}
           />
 
@@ -427,10 +506,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: SIDEBAR_WIDTH,
     backgroundColor: '#f8fafc',
-    shadowColor: '#000',
-    shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
+    borderRightWidth: 1,
+    borderRightColor: '#cbd5e1',
     elevation: 16,
     zIndex: 1000,
   },

@@ -1,14 +1,25 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 
 interface HeaderProps {
   title: string;
   onMenuPress?: () => void;
   walletAddress?: string | null;
+  displayName?: string;
+  photoUrl?: string;
   onLogout?: () => void;
 }
 
-export default function Header({ title, onMenuPress, walletAddress, onLogout }: HeaderProps) {
+export default function Header({ title, onMenuPress, walletAddress, displayName, photoUrl, onLogout }: HeaderProps) {
+  const shortWallet = walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : '';
+  const initials = (displayName || walletAddress || 'AD')
+    .split(' ')
+    .filter(Boolean)
+    .map((chunk) => chunk[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -38,7 +49,19 @@ export default function Header({ title, onMenuPress, walletAddress, onLogout }: 
 
           {walletAddress ? (
             <View style={styles.walletSection}>
-              <Text style={styles.walletText}>{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</Text>
+              <View style={styles.identityRow}>
+                {photoUrl ? (
+                  <Image source={{ uri: photoUrl }} style={styles.smallAvatarImage} />
+                ) : (
+                  <View style={styles.smallAvatar}>
+                    <Text style={styles.smallAvatarText}>{initials || 'AD'}</Text>
+                  </View>
+                )}
+                <View>
+                  <Text style={styles.walletText}>{displayName || shortWallet}</Text>
+                  <Text style={styles.walletSubText}>{shortWallet}</Text>
+                </View>
+              </View>
               {onLogout && (
                 <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
                   <Text style={styles.logoutText}>Logout</Text>
@@ -169,11 +192,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  identityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+  },
+  smallAvatar: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    backgroundColor: '#334155',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  smallAvatarImage: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    backgroundColor: '#334155',
+  },
+  smallAvatarText: {
+    color: '#f8fafc',
+    fontSize: 9,
+    fontWeight: '800',
+  },
   walletText: {
     color: '#f8fafc',
     fontSize: 10,
     fontWeight: '700',
-    marginBottom: 2,
+  },
+  walletSubText: {
+    color: '#94a3b8',
+    fontSize: 9,
+    fontWeight: '700',
   },
   logoutButton: {
     paddingHorizontal: 6,

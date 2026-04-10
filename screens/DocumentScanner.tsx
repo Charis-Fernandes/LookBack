@@ -6,19 +6,38 @@ import LocalFileStorageService from '../services/LocalFileStorageService';
 import FirebaseService from '../services/FirebaseService';
 import AIService from '../services/AIService';
 import { createEvidenceOnChain, hashDataUrl } from '../services/BlockchainService';
+import UserProfileService from '../services/UserProfileService';
+
+const DEFAULT_STREAM_URL = 'http://10.57.121.241:81';
+
+const normalizeStreamBaseUrl = (url: string) =>
+  url.replace(/\/(stream|mjpeg|snapshot|capture)\/?$/, '').replace(/\/$/, '');
 
 export default function DocumentScanner() {
-  const [streamUrl, setStreamUrl] = useState('http://10.57.121.241:81/stream');
-  const [tempUrl, setTempUrl] = useState('http://10.57.121.241:81/stream');
+  const [streamUrl, setStreamUrl] = useState(DEFAULT_STREAM_URL);
+  const [tempUrl, setTempUrl] = useState(DEFAULT_STREAM_URL);
   const [showUrlModal, setShowUrlModal] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanCount, setScanCount] = useState<number>(0);
   const [isConnected, setIsConnected] = useState(false);
+  const [streamReloadToken, setStreamReloadToken] = useState(0);
   const [aiServerOnline, setAiServerOnline] = useState(false);
   const [capturedImageUri, setCapturedImageUri] = useState<string | null>(null);
   const [caseId, setCaseId] = useState('');
   const [uploadedBy, setUploadedBy] = useState('Local Operator');
   const [inputMode, setInputMode] = useState<'esp32' | 'camera' | 'upload'>('esp32');
+  const streamBaseUrl = normalizeStreamBaseUrl(streamUrl);
+  const liveStreamEndpoint = `${streamBaseUrl}/stream`;
+  const liveStreamUrlWithToken = `${liveStreamEndpoint}?t=${streamReloadToken}`;
+
+  const webImageStyle: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    backgroundColor: '#000000',
+    transform: 'rotate(90deg)',
+    transformOrigin: 'center center',
+  };
 
   useEffect(() => {
     loadScanCount();
@@ -40,13 +59,26 @@ export default function DocumentScanner() {
     }
   };
 
+  const logUploadEvent = async (evidenceId: string, sourceLocation: string) => {
+    const actor = await UserProfileService.getAuditIdentity();
+    const userName = uploadedBy?.trim() || actor.userName;
+
+    await FirebaseService.logAccess({
+      userId: actor.userId,
+      userName,
+      action: 'Document uploaded',
+      resource: `${sourceLocation} | evidence:${evidenceId || 'unknown'} | mode:${inputMode}`,
+      timestamp: Date.now(),
+    });
+  };
+
   const handleScanDocument = async () => {
     try {
       setIsScanning(true);
       console.log('📸 Scanning document from ESP32-CAM...');
 
-      // Get base URL without /stream
-      const baseUrl = streamUrl.replace(/\/stream$/, '').replace(/:81$/, '');
+      // Get base URL and capture endpoint
+      const baseUrl = streamBaseUrl;
       const captureUrl = `${baseUrl}/capture`;
 
       console.log('📸 Capturing from:', captureUrl);
@@ -240,6 +272,10 @@ export default function DocumentScanner() {
       return '';
     });
 
+    await logUploadEvent(evidenceId || snapshotId, sourceLocation).catch((error) => {
+      console.warn('Access log warning:', error);
+    });
+
     // ── BLOCKCHAIN INTEGRATION: Store evidence hash on-chain ──
     if (evidenceId) {
       try {
@@ -401,7 +437,10 @@ export default function DocumentScanner() {
   };
 
   const handleChangeUrl = () => {
-      setStreamUrl(tempUrl);
+      const normalizedUrl = normalizeStreamBaseUrl(tempUrl);
+      setStreamUrl(normalizedUrl);
+      setTempUrl(normalizedUrl);
+      setStreamReloadToken(prev => prev + 1);
       setShowUrlModal(false);
       setIsConnected(false);
     };
@@ -451,25 +490,36 @@ export default function DocumentScanner() {
         {inputMode === 'esp32' ? (
           /* ESP32-CAM Stream Preview */
           <View style={styles.cameraContainer}>
-            <WebView
-              source={{ uri: streamUrl }}
-              style={styles.camera}
-              onLoad={handleStreamLoad}
-              onError={handleStreamError}
-              startInLoadingState={true}
-              injectedJavaScript={`
-                const style = document.createElement('style');
-                style.innerHTML = '#mjpeg-stream { transform: rotate(-90deg); width: 100vh; height: 100vw; }';
-                document.head.appendChild(style);
-                true;
-              `}
-              renderLoading={() => (
-                <View style={styles.loadingOverlay}>
-                  <ActivityIndicator size="large" color="#475569" />
-                  <Text style={styles.loadingText}>AWAITING DATA STREAM...</Text>
-                </View>
-              )}
-            />
+            {Platform.OS === 'web' ? (
+              <img
+                key={liveStreamUrlWithToken}
+                src={liveStreamUrlWithToken}
+                style={webImageStyle}
+                onLoad={handleStreamLoad}
+                onError={handleStreamError}
+                alt="Document scanner stream"
+              />
+            ) : (
+              <WebView
+                source={{ uri: liveStreamEndpoint }}
+                style={styles.camera}
+                onLoad={handleStreamLoad}
+                onError={handleStreamError}
+                startInLoadingState={true}
+                injectedJavaScript={`
+                  const style = document.createElement('style');
+                  style.innerHTML = '#mjpeg-stream { transform: rotate(-90deg); width: 100vh; height: 100vw; }';
+                  document.head.appendChild(style);
+                  true;
+                `}
+                renderLoading={() => (
+                  <View style={styles.loadingOverlay}>
+                    <ActivityIndicator size="large" color="#475569" />
+                    <Text style={styles.loadingText}>AWAITING DATA STREAM...</Text>
+                  </View>
+                )}
+              />
+            )}
             {/* Connection Status */}
             <View style={[styles.statusBadge, isConnected ? styles.statusConnected : styles.statusDisconnected]}>
               <Text style={styles.statusText}>
@@ -609,7 +659,7 @@ export default function DocumentScanner() {
                 onPress={() => {
                   checkAIServer();
                   setIsConnected(false);
-                  setStreamUrl(streamUrl + '?t=' + Date.now());
+                  setStreamReloadToken(prev => prev + 1);
                 }}
               >
                 <Text style={styles.secondaryButtonText}>FORCE RECONNECT</Text>
@@ -652,7 +702,7 @@ export default function DocumentScanner() {
               style={styles.modalInput}
               value={tempUrl}
               onChangeText={setTempUrl}
-              placeholder="http://192.168.x.x:81/stream"
+              placeholder="http://192.168.x.x:81"
               autoCapitalize="none"
               autoCorrect={false}
             />

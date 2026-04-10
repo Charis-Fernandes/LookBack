@@ -12,7 +12,7 @@ const menuItems = [
   { id: 'documentScanner', label: 'DOCUMENT SCANNER', icon: '📄' },
   { id: 'liveStream', label: 'LIVE STREAM', icon: '📹' },
   { id: 'analytics', label: 'ANALYTICS & REPORTS', icon: '📊' },
-  { id: 'userLogs', label: 'USER LOGS & MANAGEMENT', icon: '👥' },
+  { id: 'userLogs', label: 'ACCESS LOGS', icon: '👥' },
   { id: 'settings', label: 'SYSTEM SETTINGS', icon: '⚙️' },
 ];
 
@@ -22,7 +22,7 @@ export default function Sidebar({ activeScreen, onNavigate }: SidebarProps) {
       {/* Logo/Title */}
       <View style={styles.header}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logoIcon}>👁️</Text>
+          <Text style={styles.logoIcon}>▶︎</Text>
         </View>
         <Text style={styles.logoText}>LOOKBACK</Text>
         <Text style={styles.subtitle}>ADMIN PORTAL</Text>

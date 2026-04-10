@@ -182,6 +182,7 @@ const COLLECTIONS = {
   EVIDENCE: 'evidence',
   CASES: 'cases',
   USERS: 'users',
+  BLOCKED_USERS: 'blocked_users',
   ACCESS_LOGS: 'access_logs',
   ANALYTICS: 'analytics',
   // AI-organized collections
@@ -194,6 +195,60 @@ const COLLECTIONS = {
 // ─── Evidence (Snapshots) ──────────────────────────────────
 
 class FirebaseService {
+
+  // ═══ AUTH BLOCKLIST ═══
+
+  private normalizeWalletAddress(walletAddress: string): string {
+    return walletAddress.trim().toLowerCase();
+  }
+
+  async blockUserLogin(
+    walletAddress: string,
+    blockedBy: string,
+    blockedById: string
+  ): Promise<void> {
+    try {
+      const normalized = this.normalizeWalletAddress(walletAddress);
+      if (!normalized) return;
+
+      await setDoc(doc(db, COLLECTIONS.BLOCKED_USERS, normalized), {
+        walletAddress: normalized,
+        blockedBy,
+        blockedById,
+        blockedAt: Date.now(),
+      });
+      console.log('✅ Wallet blocked:', normalized);
+    } catch (error) {
+      console.error('❌ Block wallet error:', error);
+      throw error;
+    }
+  }
+
+  async unblockUserLogin(walletAddress: string): Promise<void> {
+    try {
+      const normalized = this.normalizeWalletAddress(walletAddress);
+      if (!normalized) return;
+
+      await deleteDoc(doc(db, COLLECTIONS.BLOCKED_USERS, normalized));
+      console.log('✅ Wallet unblocked:', normalized);
+    } catch (error) {
+      console.error('❌ Unblock wallet error:', error);
+      throw error;
+    }
+  }
+
+  async isUserLoginBlocked(walletAddress: string): Promise<boolean> {
+    try {
+      const normalized = this.normalizeWalletAddress(walletAddress);
+      if (!normalized) return false;
+
+      const snapshot = await getDoc(doc(db, COLLECTIONS.BLOCKED_USERS, normalized));
+      return snapshot.exists();
+    } catch (error) {
+      console.error('❌ Check blocked wallet error:', error);
+      return false;
+    }
+  }
 
   // ═══ IMAGE DEDUP ═══
 

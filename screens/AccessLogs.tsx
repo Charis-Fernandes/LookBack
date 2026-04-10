@@ -1,17 +1,40 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import FirebaseService, { AccessLogItem } from '../services/FirebaseService';
+import UserProfileService from '../services/UserProfileService';
 
 export default function AccessLogs() {
   const [logs, setLogs] = useState<AccessLogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('All');
+  const [blockedWallets, setBlockedWallets] = useState<Record<string, boolean>>({});
+  const [updatingWallet, setUpdatingWallet] = useState<Record<string, boolean>>({});
+
+  const isWalletAddress = (value: string) => /^0x[a-fA-F0-9]{40}$/.test(value.trim());
 
   const loadLogs = useCallback(async () => {
     try {
       const data = await FirebaseService.getAccessLogs(200);
       setLogs(data);
+
+      const walletIds = Array.from(
+        new Set(
+          data
+            .map((item) => item.userId)
+            .filter((id): id is string => !!id && isWalletAddress(id))
+            .map((id) => id.toLowerCase())
+        )
+      );
+
+      const statusEntries = await Promise.all(
+        walletIds.map(async (walletId) => {
+          const blocked = await FirebaseService.isUserLoginBlocked(walletId);
+          return [walletId, blocked] as const;
+        })
+      );
+
+      setBlockedWallets(Object.fromEntries(statusEntries));
     } catch (error) {
       console.error('Load logs error:', error);
     } finally {
@@ -27,6 +50,46 @@ export default function AccessLogs() {
   const onRefresh = () => {
     setRefreshing(true);
     loadLogs();
+  };
+
+  const toggleBlockWallet = async (log: AccessLogItem) => {
+    const walletId = (log.userId || '').trim().toLowerCase();
+    if (!isWalletAddress(walletId)) return;
+
+    const actor = await UserProfileService.getAuditIdentity();
+    const isBlocked = !!blockedWallets[walletId];
+
+    setUpdatingWallet((prev) => ({ ...prev, [walletId]: true }));
+    try {
+      if (isBlocked) {
+        await FirebaseService.unblockUserLogin(walletId);
+        await FirebaseService.logAccess({
+          userId: actor.userId,
+          userName: actor.userName,
+          action: 'User unblocked',
+          resource: walletId,
+          timestamp: Date.now(),
+        });
+      } else {
+        await FirebaseService.blockUserLogin(walletId, actor.userName, actor.userId);
+        await FirebaseService.logAccess({
+          userId: actor.userId,
+          userName: actor.userName,
+          action: 'User blocked',
+          resource: walletId,
+          timestamp: Date.now(),
+        });
+      }
+
+      setBlockedWallets((prev) => ({
+        ...prev,
+        [walletId]: !isBlocked,
+      }));
+    } catch (error) {
+      console.error('Toggle block error:', error);
+    } finally {
+      setUpdatingWallet((prev) => ({ ...prev, [walletId]: false }));
+    }
   };
 
   const getSeverity = (action: string): string => {
@@ -122,8 +185,12 @@ export default function AccessLogs() {
           ) : (
             filteredLogs.map((log) => {
               const severity = getSeverity(log.action);
+              const walletId = (log.userId || '').trim().toLowerCase();
+              const isWallet = isWalletAddress(walletId);
+              const blocked = isWallet ? !!blockedWallets[walletId] : false;
+              const isUpdating = isWallet ? !!updatingWallet[walletId] : false;
               return (
-                <TouchableOpacity key={log.id} style={styles.tableRow}>
+                <View key={log.id} style={styles.tableRow}>
                   <View style={[styles.tableCell, { flex: 1 }]}>
                     <Text style={styles.timeText}>{formatTime(log.timestamp)}</Text>
                   </View>
@@ -131,6 +198,11 @@ export default function AccessLogs() {
                     <Text style={styles.userText} numberOfLines={1}>
                       {log.userName}
                     </Text>
+                    {log.userId && log.userId !== log.userName && (
+                      <Text style={styles.userIdText} numberOfLines={1}>
+                        {log.userId.slice(0, 6)}...{log.userId.slice(-4)}
+                      </Text>
+                    )}
                   </View>
                   <View style={[styles.tableCell, { flex: 3 }]}>
                     <Text style={styles.actionText} numberOfLines={1}>
@@ -138,31 +210,46 @@ export default function AccessLogs() {
                     </Text>
                   </View>
                   <View style={[styles.tableCell, { flex: 1 }]}>
-                    <View
-                      style={[
-                        styles.severityBadge,
-                        severity === 'critical'
-                          ? styles.badgeCritical
-                          : severity === 'warning'
-                          ? styles.badgeWarning
-                          : styles.badgeInfo,
-                      ]}
-                    >
-                      <Text
+                    {isWallet ? (
+                      <TouchableOpacity
                         style={[
-                          styles.severityText,
+                          styles.blockButton,
+                          blocked ? styles.unblockButton : styles.blockActionButton,
+                        ]}
+                        onPress={() => toggleBlockWallet(log)}
+                        disabled={isUpdating}
+                      >
+                        <Text style={[styles.blockButtonText, blocked ? styles.unblockButtonText : styles.blockActionText]}>
+                          {isUpdating ? '...' : blocked ? 'Unblock' : 'Block'}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <View
+                        style={[
+                          styles.severityBadge,
                           severity === 'critical'
-                            ? styles.textCritical
+                            ? styles.badgeCritical
                             : severity === 'warning'
-                            ? styles.textWarning
-                            : styles.textInfo,
+                            ? styles.badgeWarning
+                            : styles.badgeInfo,
                         ]}
                       >
-                        {severity === 'critical' ? '🔴' : severity === 'warning' ? '⚠️' : 'ℹ️'}
-                      </Text>
-                    </View>
+                        <Text
+                          style={[
+                            styles.severityText,
+                            severity === 'critical'
+                              ? styles.textCritical
+                              : severity === 'warning'
+                              ? styles.textWarning
+                              : styles.textInfo,
+                          ]}
+                        >
+                          {getType(log.action).toUpperCase()}
+                        </Text>
+                      </View>
+                    )}
                   </View>
-                </TouchableOpacity>
+                </View>
               );
             })
           )}
@@ -277,6 +364,12 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     fontWeight: '700',
   },
+  userIdText: {
+    marginTop: 2,
+    fontSize: 10,
+    color: '#64748b',
+    fontWeight: '600',
+  },
   actionText: {
     fontSize: 12,
     color: '#475569',
@@ -302,9 +395,37 @@ const styles = StyleSheet.create({
     borderColor: '#fca5a5',
   },
   severityText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '800',
     letterSpacing: 0.5,
+  },
+  blockButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    borderWidth: 1,
+    minWidth: 58,
+    alignItems: 'center',
+  },
+  blockActionButton: {
+    backgroundColor: '#fef2f2',
+    borderColor: '#fca5a5',
+  },
+  unblockButton: {
+    backgroundColor: '#ecfdf5',
+    borderColor: '#6ee7b7',
+  },
+  blockButtonText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  blockActionText: {
+    color: '#b91c1c',
+  },
+  unblockButtonText: {
+    color: '#047857',
   },
   textInfo: {
     color: '#475569',

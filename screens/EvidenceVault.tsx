@@ -19,6 +19,9 @@ import { verifyEvidenceRecord, blockchainContractConfig } from '../services/Bloc
 const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2; // 2 columns with padding
 
+const isLiveStreamEvidence = (item: Partial<EvidenceItem> & { deviceId?: string }) =>
+  item.category === 'snapshot' || item.deviceId === 'esp32-cam';
+
 export default function EvidenceVault() {
   const [snapshots, setSnapshots] = useState<EvidenceItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +44,7 @@ export default function EvidenceVault() {
       ]);
 
       const localMap = new Map(localData.map(item => [item.id, item]));
-      const mergedData: EvidenceItem[] = firestoreData.map(item => {
+      const mergedDataRaw: EvidenceItem[] = firestoreData.map(item => {
         const localItem = item.id ? localMap.get(item.id) : undefined;
         const imageUrl = item.imageUrl && item.imageUrl.startsWith('snapshot://')
           ? localItem?.uri || item.imageUrl
@@ -57,8 +60,11 @@ export default function EvidenceVault() {
         };
       });
 
+      const mergedData = mergedDataRaw.filter(isLiveStreamEvidence);
+      const mergedIds = new Set(mergedDataRaw.map(item => item.id).filter(Boolean));
+
       const localOnly = localData
-        .filter(localItem => !mergedData.some(item => item.id === localItem.id))
+        .filter(localItem => !mergedIds.has(localItem.id) && localItem.deviceId === 'esp32-cam')
         .map(localItem => ({
           id: localItem.id,
           imageUrl: localItem.uri,
@@ -67,11 +73,12 @@ export default function EvidenceVault() {
           quality: localItem.quality,
           streamUrl: localItem.streamUrl,
           caseId: localItem.caseId,
+          category: 'snapshot',
         }));
 
-      const data = [...mergedData, ...localOnly];
+      const data = [...mergedData, ...localOnly].sort((a, b) => b.timestamp - a.timestamp);
       setSnapshots(data);
-      console.log(`📁 Loaded ${data.length} evidence items`);
+      console.log(`📁 Loaded ${data.length} live stream evidence items`);
     } catch (error) {
       console.error('Load evidence error:', error);
       // Fallback to local storage on Firestore error
@@ -85,7 +92,8 @@ export default function EvidenceVault() {
           quality: s.quality,
           streamUrl: s.streamUrl,
           caseId: s.caseId,
-        }));
+          category: 'snapshot',
+        })).filter(item => item.deviceId === 'esp32-cam');
         setSnapshots(mapped);
       } catch (localError) {
         Alert.alert('Error', 'Failed to load evidence');
@@ -211,8 +219,8 @@ export default function EvidenceVault() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>📁 Evidence Vault</Text>
-        <Text style={styles.subtitle}>{snapshots.length} snapshots stored</Text>
+        <Text style={styles.title}>Live Stream Vault</Text>
+        <Text style={styles.subtitle}>{snapshots.length} live captures stored</Text>
       </View>
 
       <FlatList
@@ -448,7 +456,6 @@ const styles = StyleSheet.create({
     height: 180,
     resizeMode: 'cover',
     backgroundColor: '#e2e8f0',
-    transform: [{ rotate: '-90deg' }],
   },
   cardInfo: {
     padding: 12,
@@ -612,9 +619,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   fullscreenImage: {
-    width: height * 0.8, // Swap width/height for rotated image
-    height: width,
-    transform: [{ rotate: '-90deg' }],
+    width: width * 0.9,
+    height: height * 0.55,
   },
   modalInfo: {
     position: 'absolute',
@@ -624,9 +630,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     padding: 16,
     borderRadius: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 6,
   },
   modalDate: {
     fontSize: 14,

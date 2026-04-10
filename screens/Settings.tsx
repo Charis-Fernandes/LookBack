@@ -1,38 +1,97 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, TextInput, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, TextInput, Platform, Alert } from 'react-native';
+import UserProfileService from '../services/UserProfileService';
 
-export default function Settings() {
+interface SettingsProps {
+  onProfileSaved?: () => void;
+}
+
+export default function Settings({ onProfileSaved }: SettingsProps) {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [autoBackup, setAutoBackup] = useState(true);
   const [biometricAuth, setBiometricAuth] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [profilePhone, setProfilePhone] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const profile = await UserProfileService.getProfile();
+      setProfileName(profile.name || '');
+      setProfilePhone(profile.phone || '');
+      setProfileEmail(profile.email || '');
+      setProfilePhotoUrl(profile.photoUrl || '');
+    };
+
+    loadProfile();
+  }, []);
+
+  const handleSaveProfile = async () => {
+    await UserProfileService.saveProfile({
+      name: profileName,
+      phone: profilePhone,
+      email: profileEmail,
+      photoUrl: profilePhotoUrl,
+    });
+
+    onProfileSaved?.();
+    Alert.alert('Saved', 'Profile settings saved.');
+  };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Save Button */}
-      <TouchableOpacity style={styles.topSaveBtn}>
+      <TouchableOpacity style={styles.topSaveBtn} onPress={handleSaveProfile}>
         <Text style={styles.topSaveBtnText}>SAVE CONFIGURATION</Text>
       </TouchableOpacity>
 
       {/* Account Info */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>SYSTEM ADMINISTRATOR</Text>
+        <Text style={styles.sectionTitle}>PROFILE</Text>
         <View style={styles.settingsCard}>
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>OPERATOR NAME</Text>
             <TextInput
               style={styles.input}
-              placeholder="ADMIN USER"
+              value={profileName}
+              onChangeText={setProfileName}
+              placeholder="Optional name"
               placeholderTextColor="#94a3b8"
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>PHONE</Text>
+            <TextInput
+              style={styles.input}
+              value={profilePhone}
+              onChangeText={setProfilePhone}
+              placeholder="Optional phone"
+              placeholderTextColor="#94a3b8"
+              keyboardType="phone-pad"
             />
           </View>
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>CONTACT EMAIL</Text>
             <TextInput
               style={styles.input}
-              placeholder="admin@lookback.sys"
+              value={profileEmail}
+              onChangeText={setProfileEmail}
+              placeholder="Optional email"
               placeholderTextColor="#94a3b8"
               keyboardType="email-address"
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>PFP URL</Text>
+            <TextInput
+              style={styles.input}
+              value={profilePhotoUrl}
+              onChangeText={setProfilePhotoUrl}
+              placeholder="Optional image URL"
+              placeholderTextColor="#94a3b8"
+              autoCapitalize="none"
             />
           </View>
           <View style={styles.inputGroup}>
