@@ -10,7 +10,7 @@ This is a **design-only skeleton** with placeholder/mock data. No backend logic 
 
 ### 📱 Dashboard Sections
 
-- **Live Stream** - Real-time video feed from smart glasses with connection status
+- **Live Stream** - Real-time video feed from smart glasses with connection status with wifi 
 - **Evidence Vault** - Grid layout for browsing media evidence with search
 - **Document Scanner** - Camera interface for scanning documents
 - **Evidence Search** - Advanced search with filters and relevance scoring
